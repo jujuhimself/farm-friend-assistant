@@ -3,9 +3,12 @@ import React from 'react';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { COMMODITIES } from '../constants';
 
-const CommodityCard: React.FC<{ commodity: any }> = ({ commodity }) => {
+const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }> = ({ commodity, onDetails }) => {
   return (
-    <div className="bg-surface border border-border rounded-xl p-3 md:p-6 hover:border-borderHover hover:-translate-y-1 transition-all group cursor-pointer h-full flex flex-col justify-between">
+    <div 
+      onClick={() => onDetails(commodity)}
+      className="bg-surface border border-border rounded-xl p-3 md:p-6 hover:border-primary/50 hover:-translate-y-1 transition-all group cursor-pointer h-full flex flex-col justify-between"
+    >
       <div>
         <div className="flex justify-between items-start mb-2 md:mb-4">
           <span className="text-[9px] md:text-[11px] font-mono font-bold px-1.5 py-0.5 bg-background rounded text-textMuted">[{commodity.ticker}]</span>
@@ -39,15 +42,22 @@ const CommodityCard: React.FC<{ commodity: any }> = ({ commodity }) => {
           <p className="text-sm md:text-2xl font-mono font-bold text-white leading-none mb-1 whitespace-nowrap">{commodity.price.toLocaleString()}</p>
           <p className="text-[8px] md:text-xs text-textMuted uppercase font-bold">USD/MT</p>
         </div>
-        <button className="text-[8px] md:text-[11px] font-bold text-primary border border-primary/30 px-2 py-1 rounded hover:bg-primary hover:text-black transition-all flex-shrink-0 ml-1">
-          VIEW
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDetails(commodity); }}
+          className="text-[8px] md:text-[11px] font-bold text-primary border border-primary/30 px-2 py-1 rounded hover:bg-primary hover:text-black transition-all flex-shrink-0 ml-1"
+        >
+          ANALYZE
         </button>
       </div>
     </div>
   );
 };
 
-const GrainGrid: React.FC = () => {
+interface GrainGridProps {
+  onViewDetails: (item: any) => void;
+}
+
+const GrainGrid: React.FC<GrainGridProps> = ({ onViewDetails }) => {
   return (
     <section className="py-8 md:py-16 px-4 max-w-[1400px] mx-auto">
       <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-10">
@@ -56,9 +66,8 @@ const GrainGrid: React.FC = () => {
         <span className="text-textMuted text-[8px] md:text-[10px] uppercase tracking-widest hidden sm:inline">V4.2 // AGRI_MESH</span>
       </div>
 
-      {/* 2-column grid on mobile, 4-column on desktop */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8 md:mb-12">
-        {COMMODITIES.map(c => <CommodityCard key={c.ticker} commodity={c} />)}
+        {COMMODITIES.map(c => <CommodityCard key={c.ticker} commodity={c} onDetails={onViewDetails} />)}
       </div>
 
       <div className="text-center">

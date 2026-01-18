@@ -11,48 +11,110 @@ import CommandPalette from './components/CommandPalette';
 import Marketplace from './views/Marketplace';
 import Orders from './views/Orders';
 import RFQManager from './views/RFQManager';
+import Checkout from './views/Checkout';
+import CommodityDetails from './views/CommodityDetails';
+import SupplierDashboard from './views/SupplierDashboard';
+import AdminConsole from './views/AdminConsole';
+import PriceAlerts from './views/PriceAlerts';
 import GrainAI from './components/GrainAI';
 import BottomNav from './components/BottomNav';
 
-export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'intel' | 'profile';
+export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'intel' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts';
+export type UserRole = 'buyer' | 'supplier' | 'admin';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [userRole, setUserRole] = useState<UserRole>('buyer');
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
+  const [activeItem, setActiveItem] = useState<any | null>(null);
 
   const addToCart = (item: any) => {
     setCart(prev => [...prev, item]);
-    console.log(`[SYSTEM] ITEM ADDED TO BUFFER: ${item.crop}`);
+  };
+
+  const startCheckout = (item: any) => {
+    setActiveItem(item);
+    setCurrentView('checkout');
+  };
+
+  const showDetails = (item: any) => {
+    setActiveItem(item);
+    setCurrentView('details');
   };
 
   const renderView = () => {
+    if (userRole === 'supplier') {
+      return <SupplierDashboard onSwitchRole={() => setUserRole('buyer')} />;
+    }
+    if (userRole === 'admin') {
+      return <AdminConsole onSwitchRole={() => setUserRole('buyer')} />;
+    }
+
     switch (currentView) {
       case 'marketplace':
-        return <Marketplace onAddToCart={addToCart} />;
+        return <Marketplace onAddToCart={addToCart} onBuyNow={startCheckout} onViewDetails={showDetails} />;
+      case 'details':
+        return <CommodityDetails item={activeItem} onBack={() => setCurrentView('marketplace')} onBuyNow={startCheckout} onAddToCart={addToCart} />;
+      case 'checkout':
+        return <Checkout item={activeItem} onComplete={() => setCurrentView('orders')} onCancel={() => setCurrentView('marketplace')} />;
       case 'orders':
         return <Orders />;
       case 'rfq':
         return <RFQManager />;
       case 'intel':
         return <MarketIntelligence />;
+      case 'alerts':
+        return <PriceAlerts />;
       case 'profile':
         return (
-          <div className="p-8 text-center mt-20 font-mono">
-            <h1 className="text-2xl font-black mb-4">USER_PROFILE [GBIT-9823]</h1>
-            <p className="text-textMuted uppercase text-sm">Access Restricted in Demo Mode</p>
+          <div className="p-4 md:p-8 max-w-[1000px] mx-auto animate-in fade-in duration-500">
+            <div className="mb-12 border-b border-border pb-8">
+              <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Corporate DNA</h1>
+              <p className="text-primary font-mono text-xs uppercase tracking-widest">USER_NODE: GBIT-9823 // AUTHENTICATED</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+               <div className="bg-surface border border-border p-8 rounded-2xl">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-border pb-4">Identity Matrix</h3>
+                  <div className="space-y-6 font-mono text-xs">
+                     <div className="flex justify-between">
+                        <span className="text-textMuted uppercase">Company Name</span>
+                        <span className="text-white font-bold">AgriCorp Global GMBH</span>
+                     </div>
+                     <div className="flex justify-between">
+                        <span className="text-textMuted uppercase">Headquarters</span>
+                        <span className="text-white font-bold">Hamburg, DE</span>
+                     </div>
+                     <div className="flex justify-between">
+                        <span className="text-textMuted uppercase">Verification Status</span>
+                        <span className="text-primary font-bold">VERIFIED_GOLD</span>
+                     </div>
+                  </div>
+               </div>
+               <div className="space-y-6">
+                  <div className="bg-info/5 border border-info/20 p-8 rounded-2xl">
+                     <h3 className="text-xs font-black text-info uppercase tracking-widest mb-2">Switch Operational Persona</h3>
+                     <p className="text-[10px] text-textSecondary uppercase font-mono mb-6">Switch view to simulate other platform actors.</p>
+                     <div className="grid grid-cols-1 gap-3">
+                        <button onClick={() => setUserRole('supplier')} className="px-6 py-3 bg-warning text-black font-black uppercase text-[10px] rounded-xl hover:bg-white transition-all tracking-widest">Access Supplier Terminal</button>
+                        <button onClick={() => setUserRole('admin')} className="px-6 py-3 bg-danger text-white font-black uppercase text-[10px] rounded-xl hover:bg-white/10 transition-all tracking-widest">Access Admin Terminal</button>
+                     </div>
+                  </div>
+               </div>
+            </div>
           </div>
         );
       case 'dashboard':
       default:
         return (
-          <>
+          <div className="animate-in fade-in duration-500">
             <Hero onRfqClick={() => setCurrentView('rfq')} onBuyClick={() => setCurrentView('marketplace')} />
-            <GrainGrid />
+            <GrainGrid onViewDetails={showDetails} />
             <ActivityFeed />
             <QuickActions onViewChange={setCurrentView} />
             <MarketIntelligence />
-          </>
+          </div>
         );
     }
   };
@@ -60,90 +122,27 @@ function App() {
   return (
     <div className="min-h-screen bg-background font-mono selection:bg-primary/30 text-white overflow-x-hidden">
       <Ticker cartCount={cart.length} />
-      
-      {/* Desktop Sidebar */}
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} onAiToggle={() => setIsAiOpen(true)} />
-      
+      <Sidebar 
+        currentView={currentView} 
+        onViewChange={setCurrentView} 
+        onAiToggle={() => setIsAiOpen(true)} 
+        userRole={userRole}
+      />
       <CommandPalette onViewChange={setCurrentView} />
-      
-      {/* Mobile Bottom Navigation */}
       <BottomNav currentView={currentView} onViewChange={setCurrentView} />
 
       <main className="lg:ml-[240px] pt-[60px] relative pb-24 lg:pb-0">
-        <div className="max-w-full overflow-hidden">
+        <div className="max-w-full">
           {renderView()}
-
-          {/* Footer - Optimized for mobile: hidden on small views to save space, or simplified */}
-          <footer className="py-16 px-4 md:px-8 border-t border-border mt-20 max-w-[1400px] mx-auto hidden md:block">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16 text-center md:text-left">
-              <div>
-                <h2 className="text-2xl font-black text-white mb-6 tracking-tighter">GRAIN X</h2>
-                <p className="text-textMuted text-xs leading-relaxed max-w-xs font-mono mx-auto md:mx-0">
-                  TERMINAL ACCESS // B2B EXPORT AGGREGATOR. 
-                  DIRECT SOURCE: MBEYA, MOROGORO, DODOMA.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <h5 className="text-[11px] font-bold text-white uppercase tracking-widest mb-6">Operations</h5>
-                  <ul className="space-y-3 text-xs text-textMuted font-mono">
-                    <li onClick={() => setCurrentView('marketplace')} className="hover:text-primary cursor-pointer transition-colors">Marketplace</li>
-                    <li onClick={() => setCurrentView('rfq')} className="hover:text-primary cursor-pointer transition-colors">Submit RFQ</li>
-                    <li onClick={() => setCurrentView('orders')} className="hover:text-primary cursor-pointer transition-colors">Track Orders</li>
-                  </ul>
-                </div>
-                <div>
-                  <h5 className="text-[11px] font-bold text-white uppercase tracking-widest mb-6">Security</h5>
-                  <ul className="space-y-3 text-xs text-textMuted font-mono">
-                    <li className="hover:text-primary cursor-pointer transition-colors">Escrow Protection</li>
-                    <li className="hover:text-primary cursor-pointer transition-colors">KYC Verification</li>
-                    <li className="hover:text-primary cursor-pointer transition-colors">Certificates</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div>
-                <h5 className="text-[11px] font-bold text-white uppercase tracking-widest mb-6">System Status</h5>
-                <div className="space-y-3 font-mono">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-textMuted">Uptime</span>
-                    <span className="text-primary font-bold">99.9%</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-textMuted">Latency</span>
-                    <span className="text-primary font-bold">~42ms</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-textMuted">Protocol</span>
-                    <span className="text-textPrimary font-bold">V4.2/SECURE</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-textMuted font-bold uppercase tracking-widest">
-              <div className="flex items-center gap-4">
-                <span>© 2026 GRAIN X CONTROL</span>
-                <span>•</span>
-                <span>ORIGIN: TZ</span>
-              </div>
-              <div className="flex items-center gap-6">
-                <span className="hover:text-primary cursor-pointer transition-colors">DATAFEED</span>
-                <span className="hover:text-primary cursor-pointer transition-colors">API_DOCS</span>
-              </div>
-            </div>
-          </footer>
         </div>
       </main>
 
-      {/* Floating AI Action on Mobile */}
-      <div className="fixed bottom-24 right-4 z-[45] lg:hidden">
+      <div className="fixed bottom-24 lg:bottom-8 right-4 z-[45]">
         <button 
           onClick={() => setIsAiOpen(true)}
-          className="w-14 h-14 bg-primary text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center text-xl animate-bounce"
+          className="w-14 h-14 bg-primary text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center text-xl hover:scale-110 transition-transform group"
         >
-          ✨
+          <span>✨</span>
         </button>
       </div>
 

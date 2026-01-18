@@ -32,3 +32,17 @@ export const TRADE_NEWS: TradeNews[] = [
   { title: 'Weather Alert', summary: 'Heavy rains in Mbeya region may delay harvest logistics by 10-14 days.' },
   { title: 'Import Surge', summary: 'India increases sesame import quotas, driving TZS export volumes to record highs.' },
 ];
+
+export const COLLECTIVE_STATS = {
+  weeklyVolumeMT: 1420,
+  volumeGrowth: 15.4,
+  avgOrderSizeMT: 85,
+  topGrowingDestination: 'UAE',
+  destinationGrowth: 35.2,
+  activeBuyerRegions: [
+    { region: 'UAE', behavior: 'Prefer 50-100 MT Sesame/Month', norm: 'Grade A only' },
+    { region: 'India', behavior: 'Grade B Maize for feed use', norm: 'Bulk orders > 200 MT' },
+    { region: 'Germany', behavior: 'Organic Cashews', norm: 'Small, frequent shipments' },
+    { region: 'China', behavior: 'Soybeans for oil processing', norm: 'Strict purity requirements' },
+  ]
+};
