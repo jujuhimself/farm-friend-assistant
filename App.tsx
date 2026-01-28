@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Ticker from './components/Ticker';
 import Hero from './components/Hero';
 import GrainGrid from './components/GrainGrid';
@@ -68,9 +69,9 @@ function App() {
         return <PriceAlerts />;
       case 'profile':
         return (
-          <div className="p-4 md:p-8 max-w-[1000px] mx-auto animate-in fade-in duration-500">
+          <div className="p-8 max-w-[1000px] mx-auto">
             <div className="mb-12 border-b border-border pb-8">
-              <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Corporate DNA</h1>
+              <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Corporate DNA</h1>
               <p className="text-primary font-mono text-xs uppercase tracking-widest">USER_NODE: GBIT-9823 // AUTHENTICATED</p>
             </div>
 
@@ -108,13 +109,13 @@ function App() {
       case 'dashboard':
       default:
         return (
-          <div className="animate-in fade-in duration-500">
+          <>
             <Hero onRfqClick={() => setCurrentView('rfq')} onBuyClick={() => setCurrentView('marketplace')} />
             <GrainGrid onViewDetails={showDetails} />
             <ActivityFeed />
             <QuickActions onViewChange={setCurrentView} />
             <MarketIntelligence />
-          </div>
+          </>
         );
     }
   };
@@ -131,19 +132,29 @@ function App() {
       <CommandPalette onViewChange={setCurrentView} />
       <BottomNav currentView={currentView} onViewChange={setCurrentView} />
 
-      <main className="lg:ml-[240px] pt-[60px] relative pb-24 lg:pb-0">
-        <div className="max-w-full">
-          {renderView()}
-        </div>
+      <main className={`lg:ml-[240px] ${currentView === 'dashboard' ? 'pt-0' : 'pt-[60px]'} relative pb-24 lg:pb-0`}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView + userRole}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderView()}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <div className="fixed bottom-24 lg:bottom-8 right-4 z-[45]">
-        <button 
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setIsAiOpen(true)}
-          className="w-14 h-14 bg-primary text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center text-xl hover:scale-110 transition-transform group"
+          className="w-14 h-14 bg-primary text-black rounded-full shadow-[0_0_30px_rgba(0,255,136,0.3)] flex items-center justify-center text-xl transition-transform group"
         >
           <span>✨</span>
-        </button>
+        </motion.button>
       </div>
 
       <GrainAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

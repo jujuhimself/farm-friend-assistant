@@ -28,21 +28,51 @@ export const AI_INSIGHTS: MarketInsight[] = [
 ];
 
 export const TRADE_NEWS: TradeNews[] = [
-  { title: 'Export Ban Lifted', summary: 'Tanzania removes maize export restrictions, leading to stabilized regional prices.' },
-  { title: 'Weather Alert', summary: 'Heavy rains in Mbeya region may delay harvest logistics by 10-14 days.' },
-  { title: 'Import Surge', summary: 'India increases sesame import quotas, driving TZS export volumes to record highs.' },
+  { 
+    id: 'n1',
+    title: 'Export Ban Lifted: Tanzanian Maize Flow Re-opens', 
+    summary: 'The Ministry of Trade has officially terminated the seasonal export ban on Maize.',
+    content: 'Following bilateral discussions with regional trade partners, the government has lifted all restrictions on grain exports. This policy shift is designed to alleviate surplus in the Southern Highlands and capitalize on high demand in GCC markets. Logistics nodes should prepare for immediate volume surges.',
+    category: 'POLICY',
+    date: 'MAR 20, 2024',
+    author: 'GrainX Intel Unit',
+    readTime: '4 min',
+    image: 'https://images.unsplash.com/photo-1590682680695-43b964a3ae17?q=80&w=800&auto=format&fit=crop'
+  },
+  { 
+    id: 'n2',
+    title: 'Mbeya Weather Warning: 14-Day Precipitation Peak', 
+    summary: 'Satellite data shows a high-pressure system building over the Southern Highlands.',
+    content: 'Atmospheric telemetry suggests a 15% increase in seasonal rainfall for the Mbeya region. Farmers are advised to initiate early harvest protocols where moisture content is within the 13% buffer. Logistics teams should anticipate secondary road saturation and potential transit delays to Dar Port.',
+    category: 'WEATHER',
+    date: 'MAR 19, 2024',
+    author: 'AgriMet Node',
+    readTime: '3 min',
+    image: 'https://images.unsplash.com/photo-1534088568595-a066f710b721?q=80&w=800&auto=format&fit=crop'
+  },
+  { 
+    id: 'n3',
+    title: 'Dar Port: Berth 5-7 Under Maintenance', 
+    summary: 'Vessel turnaround times have increased by 38% this week.',
+    content: 'Scheduled structural repairs on the main grain terminals (Berths 5-7) have limited active loading slots. While LCL consolidation continues at Berth 1, bulk carriers are experiencing 48-72 hour delays. We recommend shifting time-sensitive Cashew shipments to Tanga Port to maintain delivery confidence.',
+    category: 'LOGISTICS',
+    date: 'MAR 18, 2024',
+    author: 'Port Control Data',
+    readTime: '6 min',
+    image: 'https://images.unsplash.com/photo-1544256718-3bcf237f3974?q=80&w=800&auto=format&fit=crop'
+  }
 ];
 
-export const COLLECTIVE_STATS = {
-  weeklyVolumeMT: 1420,
-  volumeGrowth: 15.4,
-  avgOrderSizeMT: 85,
-  topGrowingDestination: 'UAE',
-  destinationGrowth: 35.2,
-  activeBuyerRegions: [
-    { region: 'UAE', behavior: 'Prefer 50-100 MT Sesame/Month', norm: 'Grade A only' },
-    { region: 'India', behavior: 'Grade B Maize for feed use', norm: 'Bulk orders > 200 MT' },
-    { region: 'Germany', behavior: 'Organic Cashews', norm: 'Small, frequent shipments' },
-    { region: 'China', behavior: 'Soybeans for oil processing', norm: 'Strict purity requirements' },
-  ]
-};
+export const EXPORT_GUIDELINES = [
+  { country: 'UAE', docs: ['Cert of Origin', 'SGS Quality Insp', 'Phytosanitary Cert'], transit: '12-14 Days' },
+  { country: 'Germany', docs: ['Euro 1 Cert', 'Organic Cert', 'Pesticide Res Report', 'SGS'], transit: '22-26 Days' },
+  { country: 'India', docs: ['Cert of Origin', 'Plant Quarantine Import Permit', 'Grade B Cert'], transit: '18-20 Days' },
+  { country: 'China', docs: ['GACC Registration', 'Customs Entry Form', 'Purity Lab Result'], transit: '28-32 Days' },
+];
+
+export const SUPPLY_SIGNALS = [
+  { region: 'MBEYA', status: 'SURPLUS', signal: 'BULLISH', crop: 'MAIZE' },
+  { region: 'IRINGA', status: 'STABLE', signal: 'NEUTRAL', crop: 'SOYBEANS' },
+  { region: 'MTWARA', status: 'SCARCITY', signal: 'BEARISH', crop: 'CASHEWS' },
+  { region: 'MOROGORO', status: 'SURPLUS', signal: 'BULLISH', crop: 'RICE' },
+];

@@ -22,6 +22,13 @@ export interface MarketInsight {
 }
 
 export interface TradeNews {
+  id: string;
   title: string;
   summary: string;
+  content: string;
+  category: 'POLICY' | 'WEATHER' | 'LOGISTICS' | 'MARKET';
+  date: string;
+  author: string;
+  readTime: string;
+  image?: string;
 }

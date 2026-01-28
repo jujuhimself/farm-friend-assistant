@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
+import LiveTrackingMap from '../components/LiveTrackingMap';
 
 const MOCK_ORDERS = [
   { 
@@ -94,7 +95,6 @@ const Orders: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Orders List */}
         <div className="lg:col-span-4 space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
           {MOCK_ORDERS.map(order => (
             <div 
@@ -127,10 +127,8 @@ const Orders: React.FC = () => {
           ))}
         </div>
 
-        {/* Intelligence Detailed View */}
         <div className="lg:col-span-8 space-y-8 animate-in slide-in-from-right-4 duration-500">
           <div className="bg-surface border border-border p-8 rounded-2xl relative overflow-hidden">
-             {/* Header Info */}
              <div className="flex flex-col md:flex-row justify-between gap-8 mb-12 border-b border-border pb-10">
                 <div className="space-y-2">
                   <div className="flex items-center gap-4 mb-2">
@@ -158,7 +156,6 @@ const Orders: React.FC = () => {
                 </div>
              </div>
 
-             {/* AI Document Analysis Section */}
              <div className="bg-info/5 border-2 border-info/20 p-6 rounded-xl mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                    <div className="flex items-center gap-4">
@@ -187,7 +184,15 @@ const Orders: React.FC = () => {
                 )}
              </div>
 
-             {/* Pipeline Visual */}
+             {/* Dynamic Live Tracking Map */}
+             <div className="mb-8">
+                <LiveTrackingMap 
+                  orderId={selectedOrder.id} 
+                  destination={selectedOrder.destination} 
+                  status={selectedOrder.status}
+                />
+             </div>
+
              <div className="relative pt-10 pb-16 px-4">
                 <div className="absolute top-[52px] left-0 right-0 h-0.5 bg-background border-b border-border border-dashed"></div>
                 <div 
@@ -213,9 +218,7 @@ const Orders: React.FC = () => {
                 </div>
              </div>
 
-             {/* Dynamic Intel Sections */}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Telemetry & GPS */}
                 <div className="bg-background border border-border p-6 rounded-xl space-y-6">
                    <h4 className="text-[10px] font-black text-textMuted uppercase tracking-widest mb-4 flex items-center gap-2">
                      <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span> CONTAINER_TELEMETRY
@@ -236,7 +239,6 @@ const Orders: React.FC = () => {
         </div>
       </div>
 
-      {/* Rating Modal */}
       {showRatingModal && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowRatingModal(false)}></div>

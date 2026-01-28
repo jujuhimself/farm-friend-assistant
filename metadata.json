@@ -1,5 +1,7 @@
 {
   "name": "Grain X - Terminal Command Center",
   "description": "A high-performance B2B agricultural commodity export platform with a terminal-inspired UI for international buyers and Tanzanian suppliers.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }
