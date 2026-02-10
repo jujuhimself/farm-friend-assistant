@@ -51,16 +51,29 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
     }
   ];
 
-  const groups = userRole === 'admin' ? ADMIN_GROUPS : userRole === 'supplier' ? SUPPLIER_GROUPS : BUYER_GROUPS;
+  const GUEST_GROUPS = [
+    {
+      title: 'PUBLIC ACCESS',
+      items: [
+        { id: 'dashboard', icon: '📊', label: 'OVERVIEW' },
+        { id: 'marketplace', icon: '🔍', label: 'MARKETPLACE' },
+        { id: 'intel', icon: '💡', label: 'INTEL' },
+      ]
+    }
+  ];
+
+  const groups = userRole === 'admin' ? ADMIN_GROUPS : userRole === 'supplier' ? SUPPLIER_GROUPS : userRole === 'guest' ? GUEST_GROUPS : BUYER_GROUPS;
 
   return (
     <aside className="fixed top-[60px] left-0 bottom-0 w-[240px] bg-background border-r border-border hidden lg:flex flex-col z-40">
       <div className="flex-1 overflow-y-auto py-8">
         <div className="px-6 mb-8">
            <div className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${
-             userRole === 'admin' ? 'bg-danger/20 text-danger' : userRole === 'supplier' ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'
+             userRole === 'admin' ? 'bg-danger/20 text-danger' : 
+             userRole === 'supplier' ? 'bg-warning/20 text-warning' : 
+             userRole === 'guest' ? 'bg-white/5 text-textMuted' : 'bg-primary/20 text-primary'
            }`}>
-             MODE: {userRole}
+             MODE: {userRole.toUpperCase()}
            </div>
         </div>
         
@@ -100,11 +113,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
       <div className="p-4 border-t border-border space-y-2">
         <button 
           onClick={() => onViewChange('profile')}
-          className="w-full flex items-center gap-3 px-4 py-3 text-textMuted hover:text-white transition-colors text-[10px] font-bold font-mono uppercase"
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
+            currentView === 'profile' ? 'text-primary bg-primary/5' : 'text-textMuted hover:text-white hover:bg-surface'
+          }`}
         >
           <span>👤</span> PROFILE
         </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-textMuted hover:text-white transition-colors text-[10px] font-bold font-mono uppercase">
+        <button 
+          onClick={() => onViewChange('settings')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
+            currentView === 'settings' ? 'text-primary bg-primary/5' : 'text-textMuted hover:text-white hover:bg-surface'
+          }`}
+        >
           <span>⚙️</span> SETTINGS
         </button>
       </div>

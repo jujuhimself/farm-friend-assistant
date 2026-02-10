@@ -17,15 +17,24 @@ import CommodityDetails from './views/CommodityDetails';
 import SupplierDashboard from './views/SupplierDashboard';
 import AdminConsole from './views/AdminConsole';
 import PriceAlerts from './views/PriceAlerts';
+import NewsFeed from './views/NewsFeed';
+import Profile from './views/Profile';
+import Settings from './views/Settings';
+import Registration from './views/Registration';
 import GrainAI from './components/GrainAI';
 import BottomNav from './components/BottomNav';
 
-export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'intel' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts';
-export type UserRole = 'buyer' | 'supplier' | 'admin';
+export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'intel' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts' | 'news' | 'registration' | 'settings';
+export type UserRole = 'buyer' | 'supplier' | 'admin' | 'guest';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  
+  // DEV_MODE: Set to 'buyer' or 'supplier' and true to bypass registration flow
   const [userRole, setUserRole] = useState<UserRole>('buyer');
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  
+  const [pendingView, setPendingView] = useState<ViewType | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
   const [activeItem, setActiveItem] = useState<any | null>(null);
@@ -34,9 +43,27 @@ function App() {
     setCart(prev => [...prev, item]);
   };
 
-  const startCheckout = (item: any) => {
-    setActiveItem(item);
-    setCurrentView('checkout');
+  const protectedNavigate = (view: ViewType, item?: any) => {
+    // Check bypassed for easier development as per user request
+    if (!isAuthenticated) {
+      setPendingView(view);
+      if (item) setActiveItem(item);
+      setCurrentView('registration');
+    } else {
+      if (item) setActiveItem(item);
+      setCurrentView(view);
+    }
+  };
+
+  const handleAuthSuccess = (role: UserRole) => {
+    setUserRole(role);
+    setIsAuthenticated(true);
+    if (pendingView) {
+      setCurrentView(pendingView);
+      setPendingView(null);
+    } else {
+      setCurrentView('dashboard');
+    }
   };
 
   const showDetails = (item: any) => {
@@ -45,7 +72,7 @@ function App() {
   };
 
   const renderView = () => {
-    if (userRole === 'supplier') {
+    if (userRole === 'supplier' && currentView === 'dashboard') {
       return <SupplierDashboard onSwitchRole={() => setUserRole('buyer')} />;
     }
     if (userRole === 'admin') {
@@ -53,10 +80,12 @@ function App() {
     }
 
     switch (currentView) {
+      case 'registration':
+        return <Registration onComplete={handleAuthSuccess} onCancel={() => setCurrentView('dashboard')} />;
       case 'marketplace':
-        return <Marketplace onAddToCart={addToCart} onBuyNow={startCheckout} onViewDetails={showDetails} />;
+        return <Marketplace onAddToCart={addToCart} onBuyNow={(item) => protectedNavigate('checkout', item)} onViewDetails={showDetails} />;
       case 'details':
-        return <CommodityDetails item={activeItem} onBack={() => setCurrentView('marketplace')} onBuyNow={startCheckout} onAddToCart={addToCart} />;
+        return <CommodityDetails item={activeItem} onBack={() => setCurrentView('marketplace')} onBuyNow={(item) => protectedNavigate('checkout', item)} onAddToCart={addToCart} />;
       case 'checkout':
         return <Checkout item={activeItem} onComplete={() => setCurrentView('orders')} onCancel={() => setCurrentView('marketplace')} />;
       case 'orders':
@@ -64,57 +93,24 @@ function App() {
       case 'rfq':
         return <RFQManager />;
       case 'intel':
-        return <MarketIntelligence />;
+        return <MarketIntelligence onViewChange={(v) => protectedNavigate(v as ViewType)} />;
+      case 'news':
+        return <NewsFeed onBack={() => setCurrentView('intel')} />;
       case 'alerts':
         return <PriceAlerts />;
       case 'profile':
-        return (
-          <div className="p-8 max-w-[1000px] mx-auto">
-            <div className="mb-12 border-b border-border pb-8">
-              <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Corporate DNA</h1>
-              <p className="text-primary font-mono text-xs uppercase tracking-widest">USER_NODE: GBIT-9823 // AUTHENTICATED</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               <div className="bg-surface border border-border p-8 rounded-2xl">
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 border-b border-border pb-4">Identity Matrix</h3>
-                  <div className="space-y-6 font-mono text-xs">
-                     <div className="flex justify-between">
-                        <span className="text-textMuted uppercase">Company Name</span>
-                        <span className="text-white font-bold">AgriCorp Global GMBH</span>
-                     </div>
-                     <div className="flex justify-between">
-                        <span className="text-textMuted uppercase">Headquarters</span>
-                        <span className="text-white font-bold">Hamburg, DE</span>
-                     </div>
-                     <div className="flex justify-between">
-                        <span className="text-textMuted uppercase">Verification Status</span>
-                        <span className="text-primary font-bold">VERIFIED_GOLD</span>
-                     </div>
-                  </div>
-               </div>
-               <div className="space-y-6">
-                  <div className="bg-info/5 border border-info/20 p-8 rounded-2xl">
-                     <h3 className="text-xs font-black text-info uppercase tracking-widest mb-2">Switch Operational Persona</h3>
-                     <p className="text-[10px] text-textSecondary uppercase font-mono mb-6">Switch view to simulate other platform actors.</p>
-                     <div className="grid grid-cols-1 gap-3">
-                        <button onClick={() => setUserRole('supplier')} className="px-6 py-3 bg-warning text-black font-black uppercase text-[10px] rounded-xl hover:bg-white transition-all tracking-widest">Access Supplier Terminal</button>
-                        <button onClick={() => setUserRole('admin')} className="px-6 py-3 bg-danger text-white font-black uppercase text-[10px] rounded-xl hover:bg-white/10 transition-all tracking-widest">Access Admin Terminal</button>
-                     </div>
-                  </div>
-               </div>
-            </div>
-          </div>
-        );
+        return <Profile userRole={userRole} onLogout={() => { setIsAuthenticated(false); setUserRole('guest'); setCurrentView('dashboard'); }} />;
+      case 'settings':
+        return <Settings />;
       case 'dashboard':
       default:
         return (
           <>
-            <Hero onRfqClick={() => setCurrentView('rfq')} onBuyClick={() => setCurrentView('marketplace')} />
+            <Hero onRfqClick={() => protectedNavigate('rfq')} onBuyClick={() => setCurrentView('marketplace')} />
             <GrainGrid onViewDetails={showDetails} />
             <ActivityFeed />
-            <QuickActions onViewChange={setCurrentView} />
-            <MarketIntelligence />
+            <QuickActions onViewChange={(v) => protectedNavigate(v as ViewType)} />
+            <MarketIntelligence onViewChange={(v) => protectedNavigate(v as ViewType)} />
           </>
         );
     }
@@ -125,12 +121,12 @@ function App() {
       <Ticker cartCount={cart.length} />
       <Sidebar 
         currentView={currentView} 
-        onViewChange={setCurrentView} 
+        onViewChange={(v) => protectedNavigate(v as ViewType)} 
         onAiToggle={() => setIsAiOpen(true)} 
         userRole={userRole}
       />
-      <CommandPalette onViewChange={setCurrentView} />
-      <BottomNav currentView={currentView} onViewChange={setCurrentView} />
+      <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
+      <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
 
       <main className={`lg:ml-[240px] ${currentView === 'dashboard' ? 'pt-0' : 'pt-[60px]'} relative pb-24 lg:pb-0`}>
         <AnimatePresence mode="wait">

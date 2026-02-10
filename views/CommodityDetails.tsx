@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { GoogleGenAI } from "@google/genai";
+import { motion, AnimatePresence } from 'framer-motion';
+import { COMMODITIES } from '../constants';
 
 interface CommodityDetailsProps {
   item: any | null;
@@ -14,6 +16,7 @@ const CommodityDetails: React.FC<CommodityDetailsProps> = ({ item, onBack, onBuy
   const [activePhoto, setActivePhoto] = useState(0);
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [isThinking, setIsThinking] = useState(false);
+  const [activeAccordion, setActiveAccordion] = useState<string | null>('process');
 
   if (!item) return null;
 
@@ -23,321 +26,251 @@ const CommodityDetails: React.FC<CommodityDetailsProps> = ({ item, onBack, onBuy
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `You are a professional commodity trade negotiator for Grain X. 
-        Analyze this trade and suggest a specific counter-offer and negotiation strategy in a technical terminal style.
-        
-        DATA POINT:
-        Commodity: ${item.crop || item.name}
-        Current Price: $${item.price}/MT
-        Supplier: ${item.supplier}
-        Origin: ${item.origin}
-        Market Context: 2% below current asking index.
-        Supplier Reputation: 4.9 Trust Score.
-        
-        Focus on volume-based discounts, payment speed incentives, or lead time adjustments. 
-        Keep the response strictly under 100 words and use ALL CAPS for key directives.`,
+        contents: `Act as a B2B trade negotiator. Suggest a professional counter-offer for ${item.crop || item.name} at $${item.price}/MT. Focus on volume and payment terms. Max 60 words.`,
       });
-
-      setAiSuggestion(response.text || "UNABLE_TO_GENERATE_STRATEGY.");
+      setAiSuggestion(response.text || "PROTOCOL_OFFLINE");
     } catch (error) {
-      console.error("AI NEGOTIATION ERROR:", error);
-      setAiSuggestion("UPLINK_FAILURE: AI_NEGOTIATOR_OFFLINE.");
+      setAiSuggestion("CONNECTION_ERROR");
     } finally {
       setIsThinking(false);
     }
   };
 
-  // Mocked DNA data for terminal feel
-  const dnaSpecs = [
-    { label: 'MOISTURE CONTENT', value: '12.5% max', status: 'optimal' },
-    { label: 'PURITY LEVEL', value: '98.5% min', status: 'optimal' },
-    { label: 'TEST WEIGHT', value: '72kg/hl', status: 'optimal' },
-    { label: 'AFLATOXIN', value: '<10ppb', status: 'safe' },
-    { label: 'BROKEN GRAINS', value: '2.0% max', status: 'good' },
-    { label: 'FOREIGN MATTER', value: '0.5% max', status: 'optimal' },
-  ];
+  const relatedProducts = COMMODITIES.filter(c => c.ticker !== item.ticker).slice(0, 5);
 
-  const photos = [
-    `https://picsum.photos/seed/${item.id}1/800/600`,
-    `https://picsum.photos/seed/${item.id}2/800/600`,
-    `https://picsum.photos/seed/${item.id}3/800/600`,
+  const stats = [
+    { label: 'Style', value: item.ticker || 'G-X-2025' },
+    { label: 'Colorway', value: 'Natural / Export Grade' },
+    { label: 'Retail Price', value: `$${item.price - 15}` },
+    { label: 'Release Date', value: '01/01/2025' },
+    { label: 'Restock Date', value: '01/09/2026' },
   ];
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-border pb-8">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={onBack}
-            className="w-12 h-12 bg-surface border border-border flex items-center justify-center rounded-xl hover:text-primary hover:border-primary transition-all font-black"
-          >
-            ←
-          </button>
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded tracking-widest uppercase font-mono">
-                REFERENCE: {item.ticker || `TZ-${item.id}`}
-              </span>
-              <span className="text-[10px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded tracking-widest uppercase font-mono">
-                VERIFIED SOURCE
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-none">{item.crop || item.name}</h1>
-          </div>
+    <div className="bg-background min-h-screen text-white pb-20">
+      {/* Top Nav Breadcrumbs */}
+      <div className="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-[11px] font-mono text-textMuted uppercase tracking-wider">
+          <button onClick={onBack} className="hover:text-white">Home</button>
+          <span>/</span>
+          <button onClick={onBack} className="hover:text-white">Marketplace</button>
+          <span>/</span>
+          <span className="text-white font-bold">{item.crop || item.name}</span>
         </div>
-        <div className="flex gap-3 w-full md:w-auto">
-          <button 
-            onClick={() => onAddToCart(item)}
-            className="flex-1 md:px-8 py-4 border border-primary/30 text-primary font-black text-xs uppercase rounded-xl hover:bg-primary/10 transition-all tracking-widest"
-          >
-            BUFFER_TRADE
-          </button>
-          <button 
-            onClick={() => onBuyNow(item)}
-            className="flex-1 md:px-12 py-4 bg-primary text-black font-black text-xs uppercase rounded-xl hover:bg-primaryHover transition-all shadow-xl shadow-primary/20 tracking-widest"
-          >
-            EXECUTE_ORDER
-          </button>
+        <div className="flex gap-4">
+          <button className="text-textMuted hover:text-white">♡</button>
+          <button className="text-textMuted hover:text-white">⎗</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Visuals & DNA */}
-        <div className="lg:col-span-7 space-y-8">
-          {/* Main Visual Carousel */}
-          <div className="bg-surface border border-border rounded-2xl overflow-hidden aspect-video relative group">
-            <img 
-              src={photos[activePhoto]} 
-              alt="Commodity view" 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-            <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-              <div className="flex gap-2">
-                {photos.map((_, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => setActivePhoto(i)}
-                    className={`w-12 h-12 rounded-lg border-2 overflow-hidden transition-all ${activePhoto === i ? 'border-primary scale-110' : 'border-border opacity-60'}`}
-                  >
-                    <img src={photos[i]} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] font-bold text-white bg-black/40 px-3 py-1.5 rounded-full backdrop-blur font-mono">
-                IMAGE {activePhoto + 1}/{photos.length} // ORIGIN: {item.origin || 'TANZANIA'}
-              </p>
-            </div>
+      <div className="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 mt-4">
+        
+        {/* Left Column: Product Hero */}
+        <div className="lg:col-span-7">
+          <div className="bg-surface rounded-xl overflow-hidden aspect-square flex items-center justify-center relative border border-border">
+             <motion.img 
+              key={activePhoto}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              src={`https://picsum.photos/seed/${item.id}${activePhoto}/800/800`}
+              className="w-full h-full object-contain p-12"
+             />
+             <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/10 rounded-full overflow-hidden">
+                <motion.div 
+                  className="h-full bg-white" 
+                  initial={{ width: 0 }} 
+                  animate={{ width: '100%' }} 
+                  transition={{ duration: 5, repeat: Infinity }}
+                />
+             </div>
           </div>
-
-          {/* Buyer Network Insights Section */}
-          <div className="bg-info/5 border border-info/20 p-8 rounded-2xl">
-            <h3 className="text-sm font-black text-info uppercase tracking-[0.3em] mb-6 flex items-center gap-3">
-              <span className="text-info text-xl">👥</span> VERIFIED_BUYER_INSIGHTS
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono uppercase">
-               <div className="bg-background/40 p-5 rounded-xl border border-info/10">
-                  <p className="text-[9px] text-info font-bold uppercase tracking-widest mb-3">Regional Norms (Anonymized)</p>
-                  <p className="text-[11px] text-textSecondary leading-relaxed">
-                    MOST BUYERS FROM <span className="text-white font-bold">UAE</span> TYPICALLY ORDER <span className="text-white font-bold">50-100 MT</span> PER MONTH FOR THIS CATEGORY. GRADE A PREFERENCE: <span className="text-primary font-bold">94%</span>.
-                  </p>
-               </div>
-               <div className="bg-background/40 p-5 rounded-xl border border-info/10">
-                  <p className="text-[9px] text-info font-bold uppercase tracking-widest mb-3">Sourcing Patterns</p>
-                  <p className="text-[11px] text-textSecondary leading-relaxed">
-                    INDIA-BASED PROCESSORS PREFER GRADE B FOR FEED USE. AVG. LEAD TIME ACCEPTANCE: <span className="text-white font-bold">18 DAYS</span>.
-                  </p>
-               </div>
-            </div>
-          </div>
-
-          {/* AI Negotiation Assistant */}
-          <div className="bg-warning/5 border border-warning/20 p-8 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <span className="text-4xl">💼</span>
-            </div>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-              <h3 className="text-sm font-black text-warning uppercase tracking-[0.3em] flex items-center gap-3">
-                Price Negotiation Assistant
-              </h3>
-              <button 
-                onClick={handleSuggestCounterOffer}
-                disabled={isThinking}
-                className="text-[9px] font-black uppercase tracking-widest bg-warning text-black px-4 py-2 rounded-lg hover:bg-white transition-all disabled:opacity-50 flex items-center gap-2"
-              >
-                {isThinking ? (
-                  <>
-                    <span className="w-2 h-2 rounded-full bg-black animate-ping"></span>
-                    CALCULATING_LEVERAGE...
-                  </>
-                ) : (
-                  <>SUGGEST COUNTER-OFFER</>
-                )}
-              </button>
-            </div>
-
-            {aiSuggestion ? (
-              <div className="bg-background/60 border border-warning/30 p-5 rounded-xl mb-6 animate-in slide-in-from-top-4 duration-500 font-mono text-[11px] leading-relaxed text-warning">
-                <div className="flex items-center gap-2 mb-3 border-b border-warning/20 pb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
-                  <span className="font-black">NEGOTIATION_STRATEGY_PROTOCOL</span>
-                </div>
-                {aiSuggestion}
-              </div>
-            ) : null}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-mono">
-               <div className="space-y-4">
-                  <p className="text-[10px] text-warning font-bold uppercase tracking-widest">Tactical Sourcing Outlook</p>
-                  <p className="text-[11px] text-textSecondary leading-relaxed uppercase">
-                    THIS SUPPLIER TYPICALLY ACCEPTS <span className="text-white font-bold">3-5% BELOW ASKING</span> FOR VOLUMES {'>'} 100 MT. CURRENT MARKET INDEX IS 2% BELOW ASKING — YOU HAVE A <span className="text-primary font-bold">STRONG NEGOTIATING POSITION</span>.
-                  </p>
-               </div>
-               <div className="bg-background/40 p-4 rounded-xl border border-warning/10">
-                  <p className="text-[9px] text-textMuted font-bold uppercase mb-2">Confidence Signal</p>
-                  <div className="flex items-center gap-4">
-                    <span className="text-2xl font-black text-warning">82%</span>
-                    <span className="text-[10px] text-textSecondary uppercase leading-tight">HISTORICAL ACCURACY ON PRICING FORECASTS FOR THIS SECTOR.</span>
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          {/* Commodity DNA */}
-          <div className="bg-surface border border-border p-8 rounded-2xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] mb-8 border-b border-border pb-4 flex items-center gap-3">
-              <span className="text-primary text-xl">🧬</span> COMMODITY_DNA / QUALITY_PROFILE
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {dnaSpecs.map((spec, i) => (
-                <div key={i} className="bg-background border border-border/50 p-4 rounded-xl hover:border-primary/30 transition-colors">
-                  <p className="text-[9px] font-black text-textMuted uppercase tracking-widest mb-1">{spec.label}</p>
-                  <p className="text-lg font-bold text-white font-mono">{spec.value}</p>
-                  <div className="flex items-center gap-1.5 mt-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                    <span className="text-[8px] font-bold text-primary uppercase">{spec.status}</span>
-                  </div>
+          
+          {/* Related Products Carousel (StockX style) */}
+          <div className="mt-16">
+            <h3 className="text-lg font-bold mb-6">Related Products</h3>
+            <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide">
+              {relatedProducts.map((p, i) => (
+                <div key={i} className="min-w-[180px] bg-surface border border-border rounded-xl p-4 hover:border-primary transition-all cursor-pointer">
+                  <img src={`https://picsum.photos/seed/${p.ticker}/300/300`} className="w-full aspect-square object-contain mb-4 rounded-lg" />
+                  <p className="text-[10px] font-bold uppercase truncate">{p.name}</p>
+                  <p className="text-xs font-black mt-1">${p.price}</p>
+                  <p className="text-[9px] text-textMuted mt-1">Last Sale: ${p.price - 5}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Technical Stats & Market Data */}
-        <div className="lg:col-span-5 space-y-8">
-          {/* Price Tracking Terminal */}
-          <div className="bg-background border-2 border-primary/20 p-8 rounded-2xl glow-border">
-            <div className="flex justify-between items-start mb-8">
-              <div>
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Current Trading Price</p>
-                <p className="text-5xl font-black text-white tracking-tighter">${item.price}</p>
-                <p className="text-xs text-textMuted font-bold uppercase tracking-widest mt-1">USD per Metric Ton</p>
-              </div>
-              <div className={`text-right ${item.change >= 0 ? 'text-primary' : 'text-danger'} font-mono`}>
-                <p className="text-2xl font-bold">{item.change >= 0 ? '▲' : '▼'}{Math.abs(item.change)}%</p>
-                <p className="text-[10px] font-bold uppercase">24H PERFORMANCE</p>
-              </div>
-            </div>
-
-            <div className="h-[200px] w-full mb-8 border border-border/50 rounded-xl p-4 bg-surface/30">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={item.history || []}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
-                  <XAxis hide />
-                  <YAxis hide domain={['dataMin', 'dataMax']} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#141414', border: '1px solid #2a2a2a', fontSize: '10px', color: '#fff' }}
-                    labelStyle={{ display: 'none' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#00ff88" 
-                    strokeWidth={3} 
-                    dot={false}
-                    animationDuration={1500}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-               <div className="bg-surface/50 p-4 rounded-xl border border-border">
-                <p className="text-[9px] font-black text-textMuted uppercase mb-1">Volume Ready</p>
-                <p className="text-xl font-bold text-white font-mono">{item.volume || '500 MT'}</p>
-               </div>
-               <div className="bg-surface/50 p-4 rounded-xl border border-border">
-                <p className="text-[9px] font-black text-textMuted uppercase mb-1">Lead Time</p>
-                <p className="text-xl font-bold text-white font-mono">7-12 DAYS</p>
-               </div>
-            </div>
+        {/* Right Column: Buying Matrix */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black uppercase tracking-tight">{item.crop || item.name}</h1>
+            <p className="text-textMuted text-sm font-mono uppercase tracking-widest">Grade A Harvest (2025)</p>
           </div>
 
-          {/* Supplier Reliability & Community Feedback */}
-          <div className="bg-surface border border-border p-8 rounded-2xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] mb-6 flex justify-between items-center">
-               <span>Supplier Verification</span>
-               <span className="text-[9px] font-mono text-primary font-bold">REPUTATION_HUB</span>
-            </h3>
-            <div className="flex items-center gap-6 mb-8">
-               <div className="w-16 h-16 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-center text-3xl">
-                 🏢
-               </div>
-               <div>
-                  <h4 className="text-lg font-bold text-white uppercase tracking-tight">{item.supplier || 'MAZAOHUB'}</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-warning">★★★★★</span>
-                    <span className="text-[10px] font-mono text-textMuted">(4.9 TRUST SCORE)</span>
+          <div className="flex gap-2 mt-4">
+            {[1, 2, 3, 4].map(i => (
+              <button key={i} onClick={() => setActivePhoto(i)} className={`w-16 h-12 rounded border-2 transition-all ${activePhoto === i ? 'border-white' : 'border-transparent'}`}>
+                <img src={`https://picsum.photos/seed/${item.id}${i}/100/100`} className="w-full h-full object-cover rounded" />
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-surface border border-border p-6 rounded-xl space-y-4">
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-textMuted uppercase tracking-widest">Sourcing Quantity:</span>
+              <div className="flex items-center gap-4">
+                 <span className="text-white font-bold">ALL</span>
+                 <span className="text-textMuted cursor-pointer">▼</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+               <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-background border border-border p-4 rounded-xl">
+                    <p className="text-[10px] text-textMuted uppercase font-bold tracking-widest mb-1">Buy Now for</p>
+                    <p className="text-2xl font-black">${item.price}</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-center gap-3">
+                    <span className="text-xl">⚡</span>
+                    <div>
+                      <p className="text-[11px] font-black text-primary uppercase">769 Sold</p>
+                      <p className="text-[9px] text-primary/70 uppercase">In Last 3 Days!</p>
+                    </div>
                   </div>
                </div>
+
+               <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={handleSuggestCounterOffer}
+                    className="py-4 border-2 border-white text-white font-black uppercase text-xs rounded-xl hover:bg-white hover:text-black transition-all"
+                  >
+                    {isThinking ? 'Calculating...' : 'Make Offer'}
+                  </button>
+                  <button 
+                    onClick={() => onBuyNow(item)}
+                    className="py-4 bg-primary text-black font-black uppercase text-xs rounded-xl hover:bg-primaryHover transition-all shadow-xl shadow-primary/10"
+                  >
+                    Buy Now
+                  </button>
+               </div>
             </div>
 
-            <div className="bg-background/50 border border-border rounded-xl p-4 mb-8">
-               <p className="text-[9px] font-black text-textMuted uppercase mb-3 tracking-widest">AI Feedback Summary</p>
-               <div className="flex gap-3 mb-4">
-                  <span className="text-primary text-lg">⭐</span>
-                  <p className="text-[10px] text-textSecondary font-mono uppercase leading-relaxed">
-                     SUPPLIER CONSISTENTLY RATED <span className="text-white">5-STARS</span> BY EUROPEAN BUYERS. KNOWN FOR EXCEPTIONAL COMMUNICATION AND DOCS ACCURACY.
-                  </p>
-               </div>
-               <div className="flex justify-between items-center text-[9px] font-mono opacity-60">
-                  <span className="uppercase">Avg Delivery Rating: 4.8</span>
-                  <span className="uppercase">Avg Quality Rating: 5.0</span>
-               </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-xs">
-                 <span className="text-textSecondary font-mono uppercase">Successful Exports</span>
-                 <span className="text-white font-bold">428 SHIPMENTS</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                 <span className="text-textSecondary font-mono uppercase">Quality Pass Rate</span>
-                 <span className="text-primary font-bold">99.4%</span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                 <span className="text-textSecondary font-mono uppercase">KYC Status</span>
-                 <span className="text-info font-bold">GOLD_VERIFIED</span>
-              </div>
+            <div className="flex justify-between items-center pt-4 border-t border-border/50 text-xs font-mono">
+               <div className="text-textMuted">Last Sale: <span className="text-white">${item.price - 8}</span></div>
+               <button className="text-primary hover:underline uppercase font-bold tracking-widest text-[10px]">View Market Data</button>
             </div>
           </div>
 
-          {/* Certificates */}
-          <div className="bg-surface border border-border p-8 rounded-2xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.3em] mb-6">Certifications / Docs</h3>
-            <div className="grid grid-cols-1 gap-3">
-              {['Phytosanitary Cert', 'Cert of Origin', 'Quality Insp (SGS)', 'Fumigation Report'].map((doc, i) => (
-                <div key={i} className="flex items-center justify-between p-3 border border-border rounded-lg bg-background hover:bg-white/5 transition-colors cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <span className="text-info">📄</span>
-                    <span className="text-[10px] font-bold text-textSecondary uppercase tracking-widest group-hover:text-white transition-colors">{doc}</span>
-                  </div>
-                  <span className="text-primary text-[10px] font-mono">[VIEW]</span>
-                </div>
-              ))}
-            </div>
+          {aiSuggestion && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-info/10 border border-info/30 p-5 rounded-xl text-[11px] font-mono text-info uppercase leading-relaxed"
+            >
+              <span className="font-black block mb-2">AI Strategy:</span>
+              {aiSuggestion}
+            </motion.div>
+          )}
+
+          {/* Accordion Info (StockX style) */}
+          <div className="space-y-1 pt-6">
+            {[
+              { id: 'worry', title: 'Worry Free Sourcing', content: 'Verified Tanzanian origins with SGS certification standards applied at every node.' },
+              { id: 'promise', title: 'Buyer Promise', content: 'Our trade escrow ensures funds are only released upon successful quality pass at destination port.' },
+              { id: 'process', title: 'Our Process', content: 'Stock is verified via real-time warehouse telemetry before listing. No ghost inventory permitted.' }
+            ].map(acc => (
+              <div key={acc.id} className="border-t border-border last:border-b">
+                <button 
+                  onClick={() => setActiveAccordion(activeAccordion === acc.id ? null : acc.id)}
+                  className="w-full py-4 flex justify-between items-center text-[11px] font-black uppercase tracking-widest hover:text-primary transition-colors"
+                >
+                  {acc.title}
+                  <span>{activeAccordion === acc.id ? '−' : '+'}</span>
+                </button>
+                <AnimatePresence>
+                  {activeAccordion === acc.id && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden pb-4 text-[11px] text-textMuted font-mono leading-relaxed"
+                    >
+                      {acc.content}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
           </div>
+
+          <div className="pt-4">
+             <button className="w-full flex justify-between items-center text-[11px] font-black uppercase text-textMuted hover:text-white transition-colors">
+                <span>Condition: New</span>
+                <span>▼</span>
+             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Details Section */}
+      <div className="max-w-[1200px] mx-auto px-6 mt-24 pt-24 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-20">
+        <div>
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-8">Product Details</h3>
+          <div className="grid grid-cols-2 gap-y-6">
+             {stats.map(s => (
+               <div key={s.label}>
+                 <p className="text-[10px] text-textMuted font-black uppercase tracking-widest mb-1">{s.label}</p>
+                 <p className="text-sm font-bold">{s.value}</p>
+               </div>
+             ))}
+          </div>
+        </div>
+        <div>
+           <h3 className="text-2xl font-black uppercase tracking-tight mb-6">Product Description</h3>
+           <p className="text-sm text-textSecondary font-mono leading-relaxed uppercase">
+             This {item.crop || item.name} harvest (2025) makes its return as one of the most striking commodity releases in the Grain X archive. 
+             Cultivated in the Southern Highlands, this grade-A stock is recognized for its consistency and export-standard purity.
+           </p>
+           <button className="text-primary font-black uppercase text-[10px] mt-4 hover:underline">Read More ▼</button>
+        </div>
+      </div>
+
+      {/* Price History Section */}
+      <div className="max-w-[1200px] mx-auto px-6 mt-24">
+        <h3 className="text-2xl font-black uppercase tracking-tight mb-12">Price History</h3>
+        <div className="bg-surface border border-border p-10 rounded-2xl">
+          <div className="flex gap-4 mb-8">
+            {['1M', '3M', '6M', 'YTD', '1Y', 'ALL'].map(t => (
+              <button key={t} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${t === 'ALL' ? 'bg-white text-black' : 'text-textMuted hover:text-white'}`}>{t}</button>
+            ))}
+            <button className="ml-auto text-primary text-[10px] font-black uppercase tracking-widest">View Sales →</button>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={item.history || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                <XAxis dataKey="date" hide />
+                <YAxis stroke="#444" fontSize={10} tickFormatter={(v) => `$${v}`} />
+                <Tooltip contentStyle={{ backgroundColor: '#0c0c0c', border: '1px solid #1a1a1a', borderRadius: '12px' }} />
+                <Line type="stepAfter" dataKey="value" stroke="#00ff88" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+           {[
+             { label: 'Price Range', value: '$285 - $299', sub: 'Last 12 Months' },
+             { label: 'Volatility', value: '11%', sub: 'Last 3 Months' },
+             { label: 'Price Premium', value: '24%', sub: 'Last Sale' },
+             { label: 'Number of Sales', value: '38,896', sub: 'Last 3 Months' },
+           ].map((stat, i) => (
+             <div key={i} className="bg-surface border border-border p-6 rounded-xl">
+               <p className="text-lg font-black">{stat.value}</p>
+               <p className="text-[10px] text-textMuted font-black uppercase tracking-widest mt-1">{stat.label} | <span className="font-normal">{stat.sub}</span></p>
+             </div>
+           ))}
         </div>
       </div>
     </div>

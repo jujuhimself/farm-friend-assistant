@@ -1,15 +1,7 @@
 
 import React, { useState } from 'react';
 import SampleRequestModal from '../components/SampleRequestModal';
-
-const LISTINGS = [
-  { id: '1', crop: 'YELLOW MAIZE', origin: 'Mbeya', volume: '1,200 MT', price: 272, grade: 'A', supplier: 'Mazaohub' },
-  { id: '2', crop: 'LONG GRAIN RICE', origin: 'Morogoro', volume: '800 MT', price: 615, grade: 'A', supplier: 'Kilombero Agro' },
-  { id: '3', crop: 'SOYBEANS', origin: 'Iringa', volume: '450 MT', price: 438, grade: 'B', supplier: 'Mbeya Traders' },
-  { id: '4', crop: 'SESAME', origin: 'Lindi', volume: '300 MT', price: 1845, grade: 'A', supplier: 'Southern Collective' },
-  { id: '5', crop: 'COFFEE (ARABICA)', origin: 'Kilimanjaro', volume: '150 MT', price: 2420, grade: 'A', supplier: 'Kilimanjaro Estates' },
-  { id: '6', crop: 'CASHEWS', origin: 'Mtwara', volume: '2,000 MT', price: 1240, grade: 'A', supplier: 'Coastal Exports' },
-];
+import { LISTINGS } from '../constants';
 
 interface MarketplaceProps {
   onAddToCart: (item: any) => void;
@@ -22,7 +14,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
   const [selectedCrop, setSelectedCrop] = useState('ALL');
   const [selectedItemForSample, setSelectedItemForSample] = useState<any | null>(null);
 
-  const crops = ['ALL', 'MAIZE', 'RICE', 'SOYBEANS', 'SESAME', 'COFFEE', 'CASHEWS'];
+  const crops = ['ALL', 'MAIZE', 'RICE', 'SOYBEANS', 'SESAME', 'COFFEE', 'CASHEWS', 'AVOCADOS', 'VANILLA'];
 
   const filtered = LISTINGS.filter(item => {
     const matchesSearch = item.crop.toLowerCase().includes(searchTerm.toLowerCase()) || 

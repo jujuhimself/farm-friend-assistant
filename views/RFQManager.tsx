@@ -1,6 +1,15 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface MatchedSupplier {
+  name: string;
+  confidence: number;
+  reason: string;
+  location: string;
+  reliability: string;
+}
 
 const RFQManager: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +22,8 @@ const RFQManager: React.FC = () => {
   });
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
+  const [matchedSuppliers, setMatchedSuppliers] = useState<MatchedSupplier[]>([]);
 
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return;
@@ -43,9 +54,75 @@ const RFQManager: React.FC = () => {
     }
   };
 
+  const handleRunMatching = async () => {
+    if (!formData.volume || !formData.destination) {
+      alert("PLEASE COMPLETE RFQ SPECIFICATIONS BEFORE RUNNING MATCH ENGINE.");
+      return;
+    }
+
+    setIsMatching(true);
+    setMatchedSuppliers([]);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Act as the Grain X Sourcing Engine. Match this RFQ to the top 5 Tanzanian suppliers.
+        
+        RFQ DATA:
+        Crop: ${formData.crop}
+        Volume: ${formData.volume} MT
+        Destination: ${formData.destination}
+        Terms: ${formData.incoterm}
+        Specs: ${formData.instructions}
+
+        SUPPLIER DATABASE MOCK:
+        - Mazaohub (Mbeya): High Maize/Soy volume, 98% reliability.
+        - Kilimanjaro Agro (Arusha): Premium Coffee/Cashews, 95% reliability.
+        - Southern Collective (Lindi/Mtwara): Cashew/Sesame specialists.
+        - Kilombero Agro (Morogoro): High Rice capacity.
+        - Mbeya Traders Co: General grains, competitive pricing.
+        - Coastal Exports: Port-proximate warehouse, high efficiency.
+
+        Return a JSON array of 5 objects with these keys:
+        - name: Supplier Name
+        - confidence: Number (0-100)
+        - reason: Technical reason for match (max 15 words, ALL CAPS)
+        - location: Region in Tanzania
+        - reliability: String (e.g. "98% OTD")
+        
+        Sort by confidence descending.`,
+        config: { 
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                confidence: { type: Type.NUMBER },
+                reason: { type: Type.STRING },
+                location: { type: Type.STRING },
+                reliability: { type: Type.STRING }
+              },
+              required: ["name", "confidence", "reason", "location", "reliability"]
+            }
+          }
+        }
+      });
+
+      const results = JSON.parse(response.text || '[]');
+      setMatchedSuppliers(results);
+    } catch (e) {
+      console.error("MATCHING ENGINE FAILURE", e);
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('RFQ SUBMITTED TO CORE MATRIX. 5 MATCHED SUPPLIERS NOTIFIED.');
+    alert('RFQ SUBMITTED TO CORE MATRIX. MATCHED SUPPLIERS NOTIFIED VIA SECURE UPLINK.');
   };
 
   return (
@@ -161,21 +238,78 @@ const RFQManager: React.FC = () => {
         </div>
 
         <div className="space-y-8">
-          <div className="bg-primary/5 border border-primary/20 p-8 rounded-2xl">
-            <h3 className="text-sm md:text-lg font-black text-white mb-4 uppercase tracking-tight">AI Matching Protocol</h3>
-            <p className="text-[10px] text-textSecondary leading-relaxed mb-6 font-mono">
-              THE GRAIN X MATCHING ENGINE IDENTIFIES TOP 5 SUPPLIERS BASED ON:
+          {/* AI Matching Protocol Section */}
+          <div className="bg-primary/5 border border-primary/30 p-8 rounded-2xl relative overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-tight">AI Matching Protocol</h3>
+              <button 
+                onClick={handleRunMatching}
+                disabled={isMatching}
+                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded border transition-all ${
+                  isMatching ? 'border-primary bg-primary/20 text-primary' : 'border-primary/50 text-primary hover:bg-primary hover:text-black'
+                }`}
+              >
+                {isMatching ? 'SYNCING...' : 'RUN_MATCH_ENGINE'}
+              </button>
+            </div>
+            
+            <p className="text-[10px] text-textSecondary leading-relaxed mb-8 font-mono uppercase tracking-widest">
+              UPLINK ANALYZING VERIFIED INVENTORY, OTD SCORES, PROXIMITY, AND QUALITY PASS PROBABILITY.
             </p>
-            <ul className="space-y-4 text-[9px] font-bold text-primary tracking-widest uppercase font-mono">
-              <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-primary rounded-full"></span> VERIFIED INVENTORY LEVELS</li>
-              <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-primary rounded-full"></span> ON-TIME DELIVERY SCORE</li>
-              <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-primary rounded-full"></span> REGIONAL PROXIMITY</li>
-              <li className="flex items-center gap-3"><span className="w-1.5 h-1.5 bg-primary rounded-full"></span> QUALITY PASS PROBABILITY</li>
-            </ul>
+
+            <div className="space-y-4">
+              <AnimatePresence mode="popLayout">
+                {isMatching ? (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="py-12 flex flex-col items-center justify-center gap-4"
+                  >
+                    <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-[9px] font-black text-primary uppercase animate-pulse">Scanning_Global_Nodes...</span>
+                  </motion.div>
+                ) : matchedSuppliers.length > 0 ? (
+                  matchedSuppliers.map((sup, i) => (
+                    <motion.div 
+                      key={sup.name}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="p-4 bg-background/50 border border-border rounded-xl group hover:border-primary/50 transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] font-black text-white uppercase">{sup.name}</span>
+                        <span className="text-[10px] font-black text-primary">{sup.confidence}% MATCH</span>
+                      </div>
+                      <div className="w-full h-1 bg-surface rounded-full overflow-hidden mb-3">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${sup.confidence}%` }}
+                          transition={{ duration: 1, delay: i * 0.1 }}
+                          className="h-full bg-primary"
+                        />
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-[8px] text-textMuted uppercase font-black mb-1">{sup.location} // {sup.reliability}</p>
+                          <p className="text-[9px] text-textSecondary font-mono uppercase leading-tight italic">{sup.reason}</p>
+                        </div>
+                        <button className="text-[8px] font-black text-primary uppercase border border-primary/20 px-2 py-1 rounded hover:bg-primary hover:text-black transition-all">VIEW_DNA</button>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="py-12 text-center opacity-30 border-2 border-dashed border-border rounded-xl">
+                    <p className="text-[9px] font-black uppercase tracking-widest">Awaiting Command...</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <div className="bg-surface border border-border p-6 md:p-8 rounded-2xl">
-            <h3 className="text-[11px] font-black text-white mb-6 uppercase tracking-widest border-b border-border pb-4">Active RFQ Matrix</h3>
+            <h3 className="text-[11px] font-black text-white mb-6 uppercase tracking-widest border-b border-border pb-4">Recent Protocol Logs</h3>
             <div className="space-y-4">
               {[
                 { crop: 'SESAME', vol: '200 MT', status: 'QUOTED (3)', time: '2h ago' },

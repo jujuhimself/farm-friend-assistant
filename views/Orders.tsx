@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import LiveTrackingMap from '../components/LiveTrackingMap';
 
@@ -27,10 +27,13 @@ const MOCK_ORDERS = [
     statusIndex: 2, 
     date: '2024-03-15', 
     destination: 'Hamburg, DE',
+    vessel: 'MSC ILONA',
+    container: 'MSCU-112233-4',
     risk: 'MEDIUM',
     riskReason: 'PORT CONGESTION @ DAR',
     confidence: 65,
-    eta: '2024-04-02'
+    eta: '2024-04-02',
+    telemetry: { temp: '18.2°C', humidity: '65.4%', lat: '-6.8234', lng: '39.2694' }
   },
   { 
     id: 'ORD-98204', 
@@ -40,9 +43,12 @@ const MOCK_ORDERS = [
     statusIndex: 4, 
     date: '2024-03-01', 
     destination: 'Mombasa, KE',
+    vessel: 'K-LINE HORIZON',
+    container: 'KLUU-778899-1',
     risk: 'LOW',
     confidence: 100,
     eta: '2024-03-05',
+    telemetry: { temp: '31.1°C', humidity: '72.0%', lat: '-4.0435', lng: '39.6682' },
     rated: false
   },
 ];
@@ -54,6 +60,44 @@ const Orders: React.FC = () => {
   const [isVerifyingDocs, setIsVerifyingDocs] = useState(false);
   const [docFeedback, setDocFeedback] = useState<string | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [logisticsIntel, setLogisticsIntel] = useState<string | null>(null);
+  const [isGeneratingIntel, setIsGeneratingIntel] = useState(false);
+
+  // Fetch AI-driven Logistics Intelligence when order changes
+  useEffect(() => {
+    const fetchLogisticsIntel = async () => {
+      setIsGeneratingIntel(true);
+      setLogisticsIntel(null);
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const response = await ai.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: `Act as an ML-powered logistics analyst for Grain X. 
+          Order ID: ${selectedOrder.id}
+          Status: ${selectedOrder.status}
+          Vessel: ${selectedOrder.vessel}
+          Destination: ${selectedOrder.destination}
+          Current Confidence: ${selectedOrder.confidence}%
+          
+          Generate a "Technical Logistics Intelligence Briefing". 
+          Include a status string like "Shipment on track — ${selectedOrder.confidence}% confidence of delivery by ${selectedOrder.eta}". 
+          If status is not DELIVERED, mention potential risks like "Port congestion detected @ Dar Es Salaam — delivery likely delayed 2-3 days" or "Weather patterns stable across Indian Ocean".
+          Use technical terminal style, ALL CAPS for emphasis. Keep it under 60 words.`,
+        });
+        setLogisticsIntel(response.text || "INTEL_LINK_ERROR");
+      } catch (e) {
+        setLogisticsIntel("UPLINK_FAILURE: LOGISTICS_AI_NODE_OFFLINE");
+      } finally {
+        setIsGeneratingIntel(false);
+      }
+    };
+
+    if (selectedOrder.status !== 'DELIVERED') {
+      fetchLogisticsIntel();
+    } else {
+      setLogisticsIntel("DELIVERY_SUCCESS: MISSION_COMPLETE. ALL NODES VERIFIED.");
+    }
+  }, [selectedOrder.id]);
 
   const handleVerifyDocuments = async () => {
     setIsVerifyingDocs(true);
@@ -156,6 +200,41 @@ const Orders: React.FC = () => {
                 </div>
              </div>
 
+             {/* Predictive Intelligence Briefing Card */}
+             <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-xl mb-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                  <span className="text-4xl">📡</span>
+                </div>
+                <div className="flex flex-col gap-4">
+                   <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">Predictive Logistics Intel</h4>
+                   </div>
+                   
+                   {isGeneratingIntel ? (
+                     <div className="py-4 space-y-2">
+                        <div className="h-4 bg-primary/10 rounded animate-pulse w-3/4"></div>
+                        <div className="h-4 bg-primary/10 rounded animate-pulse w-1/2"></div>
+                     </div>
+                   ) : (
+                     <p className="text-[11px] md:text-xs text-textSecondary font-mono leading-relaxed uppercase">
+                       {logisticsIntel || "FETCHING_DATA_FROM_FREIGHT_FORWARDER_APIS..."}
+                     </p>
+                   )}
+
+                   <div className="flex flex-wrap gap-4 mt-2">
+                      <div className="bg-background/40 border border-border px-3 py-2 rounded-lg">
+                        <p className="text-[8px] text-textMuted font-black uppercase mb-1">ML Confidence Model</p>
+                        <p className={`text-xs font-black font-mono ${selectedOrder.confidence > 80 ? 'text-primary' : 'text-warning'}`}>{selectedOrder.confidence}% RELIABILITY</p>
+                      </div>
+                      <div className="bg-background/40 border border-border px-3 py-2 rounded-lg">
+                        <p className="text-[8px] text-textMuted font-black uppercase mb-1">Vessel Status</p>
+                        <p className="text-xs font-black text-white font-mono">{selectedOrder.vessel} // ON_WATCH</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+
              <div className="bg-info/5 border-2 border-info/20 p-6 rounded-xl mb-8">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                    <div className="flex items-center gap-4">
@@ -231,6 +310,21 @@ const Orders: React.FC = () => {
                       <div className="space-y-1">
                         <p className="text-[9px] text-textMuted font-bold uppercase tracking-widest">Rel. Humidity</p>
                         <p className="text-lg font-bold text-white font-mono">{selectedOrder.telemetry?.humidity || '--'}</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="bg-background border border-border p-6 rounded-xl space-y-6">
+                   <h4 className="text-[10px] font-black text-textMuted uppercase tracking-widest mb-4 flex items-center gap-2">
+                     <span className="w-2 h-2 rounded-full bg-info animate-pulse"></span> ASSET_GEOLOCATION
+                   </h4>
+                   <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-textMuted font-bold uppercase tracking-widest">Lat Vector</p>
+                        <p className="text-xs font-bold text-white font-mono">{selectedOrder.telemetry?.lat || '--'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-textMuted font-bold uppercase tracking-widest">Long Vector</p>
+                        <p className="text-xs font-bold text-white font-mono">{selectedOrder.telemetry?.lng || '--'}</p>
                       </div>
                    </div>
                 </div>
