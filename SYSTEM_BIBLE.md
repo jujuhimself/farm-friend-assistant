@@ -1,33 +1,54 @@
-
 # Grain X - Terminal System Bible
 
-## 1. Vision
-Grain X is a high-performance B2B agricultural commodity export platform connecting international buyers with Tanzanian suppliers. The design uses a terminal-inspired UI to convey speed, security, and technical precision.
+## 1. Vision & Design Philosophy
+Grain X is a high-performance B2B agricultural commodity export platform. 
+**Design Language**: A hybrid "Bloomberg Terminal meets StockX" aesthetic.
+- **Terminal UI**: Monospaced fonts (JetBrains Mono), scanline overlays, and high-density data visualizations to convey authority and security.
+- **Market Dynamics**: Inspired by high-end consumer marketplaces (StockX), using "Last Sale," "Market Depth," and "Price History" logic for raw commodities.
 
 ## 2. Platform Actors
-- **Buyers**: International firms sourcing commodities. High security requirements, needs escrow and logistics tracking.
-- **Suppliers**: Local aggregators/warehouses. Needs inventory management and RFQ bidding tools.
-- **Admins**: Platform operators. Review KYC, resolve disputes, and monitor global GMV.
+- **Buyers**: International firms (e.g., UAE, China, Ireland) sourcing commodities. Need high-fidelity intel, escrow safety, and real-time logistics.
+- **Suppliers**: Tanzanian aggregators/warehouses. Need inventory depth management and RFQ bidding protocols.
+- **Admins**: System operators managing KYC/Verification, global GMV monitoring, and dispute resolution via AI-assisted audits.
 
-## 3. Core Workflows
-1. **Inventory Sourcing**: Suppliers list crops -> AI categorizes and optimizes price tags based on historical data.
-2. **Discovery & RFQ**: Buyers find commodities -> Initiate RFQ -> Gemini AI helps parse and match the best 5 suppliers.
-3. **Smart Contract Checkout**: Terms finalized -> Funds moved to Escrow (Stripe Connect) -> Trade "Locked".
-4. **Logistics & Monitoring**: Warehouse to Port movement tracked via Google Maps + Container Telemetry.
-5. **Quality Verification**: SGS/Bureau Veritas docs uploaded -> Vision AI verifies certificate authenticity.
-6. **Settlement**: Delivered status confirmed -> Funds released to Supplier -> Buyer rates experience.
+## 3. Core Workflows & Modules
 
-## 4. Backend Architecture Roadmap
-- **Language**: Node.js with TypeScript (matches frontend).
-- **Database**: PostgreSQL with PostGIS for location-based sourcing optimization.
-- **Real-time**: Supabase Realtime or Socket.io for the live trade ticker.
-- **Payments**: Stripe Connect (Separate Charges & Transfers) for safe B2B escrow.
-- **AI**: Gemini 3 Pro for:
-  - Document OCR (Invoices, Phytosanitary Certs).
-  - Negotiation Chatbot (Price Leverage analysis).
-  - News sentiment analysis.
+### A. Commodity DNA & Market Intelligence (The Intel Node)
+- **Deep Discovery**: Massive search interface for browsing crop-specific profiles.
+- **Stock Profiles**: Each crop (Avocado, Maize, Vanilla) features a dedicated analytics page with interactive price history (Recharts), regional production heatmaps (Volume vs. Price), and harvest calendars.
+- **Importer Matrix**: Real-time logistics data for specific corridors (Dar to Shanghai/Dublin), including transit times and mandatory compliance documents (SGS, Phytosanitary).
 
-## 5. Deployment
-- **Frontend**: Vercel/Netlify for fast edge delivery.
-- **Backend**: AWS Lambda or Google Cloud Run for elastic scaling.
-- **CDN**: Cloudflare to optimize asset delivery for international buyers.
+### B. Inventory Sourcing & Marketplace
+- **Verified Listings**: Direct-to-supplier stock listings with grade-specific pricing (A, AA, AAA).
+- **Market Depth**: Live view of available lots within the intelligence view to bridge research and execution.
+
+### C. Discovery & RFQ Protocol
+- **AI-Parsed RFQ**: Gemini AI converts natural language requests into structured trade protocols.
+- **Match Engine**: Automatically ranks the top 5 suppliers based on OTD (On-Time Delivery), proximity, and quality pass probability.
+
+### D. Trade Finalization (The Checkout Node)
+- **Configurable Terms**: Toggle between Incoterms (FOB, CIF, EXW) with real-time fee recalculation.
+- **Escrow Lock**: Funds held in secure protocol until destination port quality verification is cleared.
+
+### E. Logistics & Telemetry Tracking
+- **Sat-Link Mapping**: Real-time vessel/container tracking via Google Maps.
+- **Asset Telemetry**: Live monitoring of internal container conditions (Temperature, Humidity) to ensure GAPs (Good Agricultural Practices).
+
+### F. Price Alert & Threshold Monitoring
+- **Trigger Matrix**: User-defined alerts for price floors/ceilings.
+- **Signal Uplink**: Push notifications when global market volatility hits specific crop targets.
+
+## 4. Technical Architecture
+
+### Frontend Stack
+- **Framework**: React 19 (ESM via esm.sh).
+- **Motion**: Framer Motion for high-fidelity state transitions.
+- **Charts**: Recharts for terminal-grade financial data visualization.
+- **AI**: Google Gemini 3 Flash/Pro for NLP parsing and image-based document verification (Vision AI).
+
+### AI Agent: Grain X Agent V4
+- **Role**: A persistent side-panel assistant capable of analyzing sourcing strategies, ranking suppliers, and providing "Technical Briefings" on crop seasonality and trade risks.
+
+## 5. Deployment & Security
+- **Uplink Integrity**: AES-256 encryption simulated for all trade data.
+- **Performance**: Edge-cached assets for low-latency access in low-bandwidth regional trade hubs.
