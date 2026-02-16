@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+
+@theme {
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-background: #050505;
+  --color-surface: #0c0c0c;
+  --color-surface-hover: #121212;
+  --color-border: #1a1a1a;
+  --color-border-hover: #262626;
+
+  --color-primary: #00ff88;
+  --color-primary-hover: #00cc6a;
+
+  --color-danger: #ff3366;
+  --color-warning: #ffaa00;
+  --color-info: #00aaff;
+
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #999999;
+  --color-text-muted: #555555;
+
+  /* Keep original class names working */
+  --color-surfaceHover: #121212;
+  --color-borderHover: #262626;
+  --color-primaryHover: #00cc6a;
+  --color-textPrimary: #ffffff;
+  --color-textSecondary: #999999;
+  --color-textMuted: #555555;
+
+  --animate-ticker: ticker 40s linear infinite;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+
+  @keyframes ticker {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Scanline overlay */
+body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 1000;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+/* Glow text utility */
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+/* Ticker pause on hover */
+.ticker-animation {
+  animation: ticker 40s linear infinite;
+}
+.ticker-animation:hover {
+  animation-play-state: paused;
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 255, 136, 0.3);
+}
