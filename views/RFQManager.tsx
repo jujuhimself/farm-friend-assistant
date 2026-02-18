@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRFQs } from '../hooks/useRFQs';
 
 interface MatchedSupplier {
   name: string;
@@ -12,6 +13,7 @@ interface MatchedSupplier {
 }
 
 const RFQManager: React.FC = () => {
+  const { rfqs, submitting, submitRFQ } = useRFQs();
   const [formData, setFormData] = useState({
     crop: 'MAIZE',
     volume: '',
@@ -20,6 +22,7 @@ const RFQManager: React.FC = () => {
     timeline: '30 DAYS',
     instructions: ''
   });
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'auth_error'>('idle');
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
@@ -120,9 +123,28 @@ const RFQManager: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('RFQ SUBMITTED TO CORE MATRIX. MATCHED SUPPLIERS NOTIFIED VIA SECURE UPLINK.');
+    setSubmitStatus('idle');
+    try {
+      await submitRFQ({
+        crop: formData.crop,
+        volume: formData.volume,
+        incoterm: formData.incoterm,
+        destination: formData.destination,
+        timeline: formData.timeline,
+        instructions: formData.instructions,
+      });
+      setSubmitStatus('success');
+      setFormData({ crop: 'MAIZE', volume: '', incoterm: 'FOB', destination: '', timeline: '30 DAYS', instructions: '' });
+      setTimeout(() => setSubmitStatus('idle'), 4000);
+    } catch (err: any) {
+      if (err.message === 'NOT_AUTHENTICATED') {
+        setSubmitStatus('auth_error');
+      } else {
+        setSubmitStatus('auth_error');
+      }
+    }
   };
 
   return (
@@ -223,10 +245,21 @@ const RFQManager: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
               <button 
                 type="submit"
-                className="w-full sm:flex-1 py-4 bg-primary text-black font-black uppercase text-[10px] md:text-xs rounded-xl hover:bg-primaryHover transition-all shadow-xl shadow-primary/10 tracking-widest"
+                disabled={submitting}
+                className="w-full sm:flex-1 py-4 bg-primary text-black font-black uppercase text-[10px] md:text-xs rounded-xl hover:bg-primaryHover transition-all shadow-xl shadow-primary/10 tracking-widest disabled:opacity-50"
               >
-                EXECUTE RFQ BROADCAST →
+                {submitting ? 'TRANSMITTING...' : 'EXECUTE RFQ BROADCAST →'}
               </button>
+              {submitStatus === 'success' && (
+                <div className="w-full text-center py-3 bg-primary/10 border border-primary/30 rounded-xl text-[10px] font-black text-primary uppercase tracking-widest animate-in slide-in-from-top-2">
+                  ✓ RFQ BROADCAST — SUPPLIERS NOTIFIED VIA SECURE UPLINK
+                </div>
+              )}
+              {submitStatus === 'auth_error' && (
+                <div className="w-full text-center py-3 bg-danger/10 border border-danger/30 rounded-xl text-[10px] font-black text-danger uppercase tracking-widest">
+                  AUTH REQUIRED — LOG IN TO SUBMIT RFQ
+                </div>
+              )}
               <button 
                 type="button"
                 className="w-full sm:w-auto px-10 py-4 border border-border text-textSecondary font-bold uppercase text-[10px] md:text-xs rounded-xl hover:bg-white/5 transition-all tracking-widest"
@@ -311,16 +344,17 @@ const RFQManager: React.FC = () => {
           <div className="bg-surface border border-border p-6 md:p-8 rounded-2xl">
             <h3 className="text-[11px] font-black text-white mb-6 uppercase tracking-widest border-b border-border pb-4">Recent Protocol Logs</h3>
             <div className="space-y-4">
-              {[
-                { crop: 'SESAME', vol: '200 MT', status: 'QUOTED (3)', time: '2h ago' },
-                { crop: 'CASHEWS', vol: '100 MT', status: 'MATCHING', time: '5m ago' }
-              ].map((rfq, i) => (
-                <div key={i} className="flex justify-between items-center p-4 border border-border rounded-xl bg-background hover:border-primary/30 transition-colors cursor-pointer group">
+              {rfqs.length === 0 ? (
+                <div className="py-8 text-center border-2 border-dashed border-border rounded-xl opacity-40">
+                  <p className="text-[9px] font-black uppercase tracking-widest">No RFQ history yet</p>
+                </div>
+              ) : rfqs.slice(0, 5).map((rfq) => (
+                <div key={rfq.id} className="flex justify-between items-center p-4 border border-border rounded-xl bg-background hover:border-primary/30 transition-colors cursor-pointer group">
                   <div>
                     <p className="text-[10px] font-black text-white uppercase group-hover:text-primary transition-colors">{rfq.crop}</p>
-                    <p className="text-[9px] text-textMuted font-mono uppercase">{rfq.vol} • {rfq.time}</p>
+                    <p className="text-[9px] text-textMuted font-mono uppercase">{rfq.volume} MT • {new Date(rfq.created_at).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-[8px] font-black px-2 py-1 rounded tracking-widest uppercase ${rfq.status.includes('QUOTED') ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning animate-pulse'}`}>
+                  <span className={`text-[8px] font-black px-2 py-1 rounded tracking-widest uppercase ${rfq.status === 'OPEN' ? 'bg-warning/10 text-warning animate-pulse' : 'bg-primary/10 text-primary'}`}>
                     {rfq.status}
                   </span>
                 </div>
