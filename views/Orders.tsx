@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import LiveTrackingMap from '../components/LiveTrackingMap';
+import { useOrders } from '../hooks/useOrders';
 
 const MOCK_ORDERS = [
   { 
@@ -56,7 +57,17 @@ const MOCK_ORDERS = [
 const PIPELINE = ['CONFIRMED', 'PAID', 'INSPECTED', 'SHIPPED', 'DELIVERED'];
 
 const Orders: React.FC = () => {
-  const [selectedOrder, setSelectedOrder] = useState(MOCK_ORDERS[0]);
+  const { orders: dbOrders, loading: ordersLoading } = useOrders();
+  
+  // Use real orders if available, fall back to mock for demo
+  const displayOrders = dbOrders.length > 0 ? dbOrders.map(o => ({
+    ...o,
+    statusIndex: PIPELINE.indexOf(o.status),
+    risk: o.risk_level,
+    riskReason: o.risk_reason,
+  })) : MOCK_ORDERS;
+
+  const [selectedOrder, setSelectedOrder] = useState<any>(MOCK_ORDERS[0]);
   const [isVerifyingDocs, setIsVerifyingDocs] = useState(false);
   const [docFeedback, setDocFeedback] = useState<string | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -140,7 +151,7 @@ const Orders: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-4 space-y-4 max-h-[800px] overflow-y-auto pr-2 custom-scrollbar">
-          {MOCK_ORDERS.map(order => (
+          {displayOrders.map(order => (
             <div 
               key={order.id} 
               onClick={() => { setSelectedOrder(order); setDocFeedback(null); }}
