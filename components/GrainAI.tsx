@@ -55,7 +55,7 @@ const GrainAI: React.FC<GrainAIProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full max-w-[450px] bg-surface border-l-2 border-primary/30 z-[100] flex flex-col shadow-[0_0_50px_rgba(0,255,136,0.15)] animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-y-0 right-0 w-full max-w-[450px] bg-surface border-l-2 border-primary/30 z-[60] flex flex-col shadow-[0_0_50px_rgba(0,255,136,0.15)] animate-in slide-in-from-right duration-300">
       <div className="h-[60px] border-b border-border flex items-center justify-between px-6 bg-background">
         <div className="flex items-center gap-3">
           <div className="relative">

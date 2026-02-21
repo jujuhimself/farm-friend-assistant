@@ -6,7 +6,6 @@ import Hero from './components/Hero';
 import GrainGrid from './components/GrainGrid';
 import ActivityFeed from './components/ActivityFeed';
 import QuickActions from './components/QuickActions';
-import MarketIntelligence from './components/MarketIntelligence';
 import Sidebar from './components/Sidebar';
 import CommandPalette from './components/CommandPalette';
 import Marketplace from './views/Marketplace';
@@ -24,16 +23,13 @@ import Registration from './views/Registration';
 import GrainAI from './components/GrainAI';
 import BottomNav from './components/BottomNav';
 
-export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'intel' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts' | 'news' | 'registration' | 'settings';
+export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts' | 'news' | 'registration' | 'settings';
 export type UserRole = 'buyer' | 'supplier' | 'admin' | 'guest';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-  
-  // DEV_MODE: Set to 'buyer' or 'supplier' and true to bypass registration flow
   const [userRole, setUserRole] = useState<UserRole>('buyer');
   const [isAuthenticated, setIsAuthenticated] = useState(true);
-  
   const [pendingView, setPendingView] = useState<ViewType | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
@@ -44,7 +40,6 @@ function App() {
   };
 
   const protectedNavigate = (view: ViewType, item?: any) => {
-    // Check bypassed for easier development as per user request
     if (!isAuthenticated) {
       setPendingView(view);
       if (item) setActiveItem(item);
@@ -92,10 +87,8 @@ function App() {
         return <Orders />;
       case 'rfq':
         return <RFQManager />;
-      case 'intel':
-        return <MarketIntelligence onViewChange={(v) => protectedNavigate(v as ViewType)} />;
       case 'news':
-        return <NewsFeed onBack={() => setCurrentView('intel')} />;
+        return <NewsFeed onBack={() => setCurrentView('dashboard')} />;
       case 'alerts':
         return <PriceAlerts />;
       case 'profile':
@@ -110,14 +103,51 @@ function App() {
             <GrainGrid onViewDetails={showDetails} />
             <ActivityFeed />
             <QuickActions onViewChange={(v) => protectedNavigate(v as ViewType)} />
-            <MarketIntelligence onViewChange={(v) => protectedNavigate(v as ViewType)} />
+            {/* News section on dashboard */}
+            <section className="py-8 md:py-16 px-4 max-w-[1400px] mx-auto">
+              <div className="flex items-center gap-4 mb-6 md:mb-10">
+                <h2 className="text-lg md:text-2xl font-bold whitespace-nowrap uppercase tracking-tighter">Latest News</h2>
+                <div className="h-px bg-border border-dashed border-t flex-1"></div>
+                <button onClick={() => setCurrentView('news')} className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline whitespace-nowrap">
+                  View All →
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                {(() => {
+                  const { TRADE_NEWS } = require('./constants');
+                  return TRADE_NEWS.slice(0, 3).map((article: any) => (
+                    <div
+                      key={article.id}
+                      onClick={() => setCurrentView('news')}
+                      className="bg-surface border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group"
+                    >
+                      {article.image && (
+                        <div className="aspect-video overflow-hidden">
+                          <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-[9px] font-bold text-primary uppercase">#{article.category}</span>
+                          <span className="text-[9px] text-textMuted">{article.date}</span>
+                        </div>
+                        <h3 className="text-sm font-bold group-hover:text-primary transition-colors leading-tight mb-2">
+                          {article.title}
+                        </h3>
+                        <p className="text-[11px] text-textMuted line-clamp-2">{article.summary}</p>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </section>
           </>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-background font-mono selection:bg-primary/30 text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background font-mono selection:bg-primary/30 text-textPrimary overflow-x-hidden">
       <Ticker cartCount={cart.length} />
       <Sidebar 
         currentView={currentView} 
@@ -142,14 +172,15 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <div className="fixed bottom-24 lg:bottom-8 right-4 z-[45]">
+      {/* AI Chat FAB - positioned above bottom nav on mobile */}
+      <div className="fixed bottom-[88px] lg:bottom-8 right-4 z-40">
         <motion.button 
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setIsAiOpen(true)}
-          className="w-14 h-14 bg-primary text-black rounded-full shadow-[0_0_30px_rgba(0,255,136,0.3)] flex items-center justify-center text-xl transition-transform group"
+          className="w-12 h-12 md:w-14 md:h-14 bg-primary text-background rounded-full shadow-[0_0_30px_rgba(0,255,136,0.3)] flex items-center justify-center text-lg md:text-xl transition-transform"
         >
-          <span>✨</span>
+          ✨
         </motion.button>
       </div>
 
