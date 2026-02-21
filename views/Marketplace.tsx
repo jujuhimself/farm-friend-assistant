@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import SampleRequestModal from '../components/SampleRequestModal';
-import { useListings } from '../hooks/useListings';
+import { PRODUCT_CATALOG } from '../constants';
 
 interface MarketplaceProps {
   onAddToCart: (item: any) => void;
@@ -9,125 +10,186 @@ interface MarketplaceProps {
   onViewDetails: (item: any) => void;
 }
 
+const CATEGORIES = ['All', 'Cereal Grains', 'Legume Grains', 'Nuts & Oilseeds', 'Root & Tubers'];
+const ORIGINS = ['All Regions', 'Dar es Salaam', 'Morogoro', 'Mwanza', 'Kilimanjaro', 'Mtwara'];
+
 const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onViewDetails }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCrop, setSelectedCrop] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedOrigin, setSelectedOrigin] = useState('All Regions');
+  const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'newest'>('newest');
   const [selectedItemForSample, setSelectedItemForSample] = useState<any | null>(null);
-  const { listings, loading } = useListings();
 
-  const crops = ['ALL', 'MAIZE', 'RICE', 'SOYBEANS', 'SESAME', 'COFFEE', 'CASHEWS', 'AVOCADOS', 'VANILLA'];
-
-  const filtered = listings.filter(item => {
-    const matchesSearch = item.crop.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (item.supplier || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCrop = selectedCrop === 'ALL' || item.crop.includes(selectedCrop);
-    return matchesSearch && matchesCrop;
-  });
+  const filtered = useMemo(() => {
+    let items = PRODUCT_CATALOG.filter(item => {
+      const matchesSearch = item.crop.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            item.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+      const matchesOrigin = selectedOrigin === 'All Regions' || item.origin === selectedOrigin;
+      return matchesSearch && matchesCategory && matchesOrigin;
+    });
+    
+    if (sortBy === 'price-asc') items.sort((a, b) => a.price - b.price);
+    else if (sortBy === 'price-desc') items.sort((a, b) => b.price - a.price);
+    
+    return items;
+  }, [searchTerm, selectedCategory, selectedOrigin, sortBy]);
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      <div className="mb-8 md:mb-12">
-        <h1 className="text-2xl md:text-4xl font-black mb-2 md:mb-4 tracking-tighter uppercase leading-none">Commodity Marketplace</h1>
-        <p className="text-textMuted font-mono text-xs md:text-sm uppercase tracking-widest">Global Sourcing Matrix // Verified Origin</p>
+    <div className="px-4 md:px-8 py-6 md:py-10 max-w-[1400px] mx-auto">
+      {/* Header */}
+      <div className="mb-6 md:mb-10">
+        <h1 className="text-2xl md:text-4xl font-black tracking-tighter uppercase leading-none mb-2">Commodity Marketplace</h1>
+        <p className="text-textMuted text-[10px] md:text-xs font-mono uppercase tracking-widest">
+          {filtered.length} products available · Verified Tanzanian Origin
+        </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-8 md:mb-12">
-        <div className="flex-1 relative">
-          <input 
-            type="text" 
-            placeholder="FIND CROP, ORIGIN, OR SUPPLIER..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-surface border border-border rounded-xl px-5 py-3 md:py-4 focus:border-primary focus:outline-none transition-all font-mono text-xs md:text-sm uppercase tracking-wider"
-          />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-          {crops.map(c => (
-            <button
-              key={c}
-              onClick={() => setSelectedCrop(c)}
-              className={`px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-black border transition-all whitespace-nowrap uppercase tracking-widest ${
-                selectedCrop === c ? 'bg-primary text-black border-primary' : 'bg-surface text-textMuted border-border hover:border-textMuted'
-              }`}
+      {/* Search & Filters */}
+      <div className="space-y-4 mb-6 md:mb-10">
+        <input 
+          type="text" 
+          placeholder="Search crops, origin, category..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-surface border border-border rounded-xl px-4 py-3 md:py-4 focus:border-primary focus:outline-none transition-all text-sm placeholder:text-textMuted"
+        />
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Category filter */}
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide flex-1">
+            {CATEGORIES.map(c => (
+              <button
+                key={c}
+                onClick={() => setSelectedCategory(c)}
+                className={`px-3 py-2 rounded-lg text-[10px] md:text-xs font-bold border transition-all whitespace-nowrap ${
+                  selectedCategory === c 
+                    ? 'bg-primary text-background border-primary' 
+                    : 'bg-surface text-textMuted border-border hover:border-textSecondary'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          
+          {/* Origin & Sort */}
+          <div className="flex gap-2">
+            <select 
+              value={selectedOrigin}
+              onChange={(e) => setSelectedOrigin(e.target.value)}
+              className="bg-surface border border-border rounded-lg px-3 py-2 text-[10px] md:text-xs text-textSecondary focus:outline-none focus:border-primary"
             >
-              {c}
-            </button>
-          ))}
+              {ORIGINS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-surface border border-border rounded-lg px-3 py-2 text-[10px] md:text-xs text-textSecondary focus:outline-none focus:border-primary"
+            >
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price: Low → High</option>
+              <option value="price-desc">Price: High → Low</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="bg-surface border border-border p-5 md:p-6 rounded-2xl h-[320px] animate-pulse">
-              <div className="h-4 bg-border rounded w-1/3 mb-4"></div>
-              <div className="h-6 bg-border rounded w-2/3 mb-2"></div>
-              <div className="h-4 bg-border rounded w-full mb-2"></div>
-              <div className="h-4 bg-border rounded w-full mb-2"></div>
-              <div className="h-4 bg-border rounded w-3/4"></div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {filtered.map(item => (
-            <div key={item.id} className="bg-surface border border-border p-5 md:p-6 rounded-2xl hover:border-primary/50 transition-all group relative overflow-hidden flex flex-col justify-between">
-              <div onClick={() => onViewDetails(item)} className="cursor-pointer">
-                <div className="flex justify-between items-start mb-4 md:mb-6">
-                  <div>
-                    <span className="text-[9px] md:text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded tracking-widest uppercase mb-2 inline-block">GRADE {item.grade}</span>
-                    <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight leading-none group-hover:text-primary transition-colors">{item.crop}</h3>
-                  </div>
-                  <div className="text-right font-mono">
-                    <p className="text-xl md:text-2xl font-black text-white">${item.price}</p>
-                    <p className="text-[9px] md:text-[10px] text-textMuted font-black uppercase tracking-widest">USD/MT</p>
-                  </div>
+      {/* Product Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {filtered.map((item, i) => (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.3 }}
+            className="bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition-all group cursor-pointer flex flex-col"
+          >
+            {/* Image */}
+            <div 
+              onClick={() => onViewDetails(item)} 
+              className="relative aspect-[4/3] overflow-hidden bg-background"
+            >
+              <img 
+                src={item.image} 
+                alt={item.crop}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop'; }}
+              />
+              <div className="absolute top-3 left-3">
+                <span className="bg-background/80 backdrop-blur-sm text-textSecondary text-[9px] md:text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                  {item.category}
+                </span>
+              </div>
+              {item.grade === 'A' && (
+                <div className="absolute top-3 right-3">
+                  <span className="bg-primary/90 text-background text-[9px] font-bold px-2 py-1 rounded-md">
+                    GRADE A
+                  </span>
                 </div>
+              )}
+            </div>
 
-                <div className="space-y-2 md:space-y-3 mb-6 md:mb-8 text-xs md:text-sm font-mono uppercase tracking-wide">
-                  <div className="flex justify-between border-b border-border/50 pb-1">
-                    <span className="text-textMuted text-[9px] md:text-[10px] font-bold">Origin</span>
-                    <span className="text-white">{item.origin}, TZ</span>
-                  </div>
-                  <div className="flex justify-between border-b border-border/50 pb-1">
-                    <span className="text-textMuted text-[9px] md:text-[10px] font-bold">Stock</span>
-                    <span className="text-white">{item.volume}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-border/50 pb-1">
-                    <span className="text-textMuted text-[9px] md:text-[10px] font-bold">Seller</span>
-                    <span className="text-primary">{item.supplier || 'Verified Supplier'}</span>
-                  </div>
+            {/* Info */}
+            <div className="p-4 flex-1 flex flex-col" onClick={() => onViewDetails(item)}>
+              <h3 className="text-sm md:text-base font-bold text-textPrimary mb-3 group-hover:text-primary transition-colors leading-tight">
+                {item.crop}
+              </h3>
+              
+              <div className="space-y-2 text-[11px] md:text-xs text-textSecondary mb-4 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-primary">📦</span>
+                  <span className="font-semibold">{item.volume}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-danger">📍</span>
+                  <span>{item.origin}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>💰</span>
+                  <span className="font-bold text-textPrimary">${item.price.toLocaleString()} <span className="text-textMuted font-normal">{item.priceUnit}</span></span>
                 </div>
               </div>
+              
+              <div className="text-[10px] text-textMuted mb-4">
+                <span className="font-semibold">Stock Period:</span>
+                <br />
+                <span className="font-bold text-textSecondary">{item.stockPeriod}</span>
+              </div>
+            </div>
 
-              <div className="flex flex-col gap-2 md:gap-3 relative z-10">
+            {/* Actions */}
+            <div className="px-4 pb-4 space-y-2">
+              <button 
+                onClick={(e) => { e.stopPropagation(); onBuyNow(item); }}
+                className="w-full py-3 bg-primary text-background rounded-xl text-xs font-bold hover:bg-primaryHover transition-all"
+              >
+                Buy Now
+              </button>
+              <div className="grid grid-cols-2 gap-2">
                 <button 
-                  onClick={() => onViewDetails(item)}
-                  className="w-full py-2.5 md:py-3 bg-white/5 border border-primary/20 text-primary rounded-xl text-[10px] md:text-xs font-black uppercase hover:bg-primary/10 transition-all flex items-center justify-center gap-2 tracking-widest"
+                  onClick={(e) => { e.stopPropagation(); onViewDetails(item); }}
+                  className="py-2.5 border border-border text-textSecondary rounded-xl text-[10px] font-bold hover:bg-surface-hover transition-all"
                 >
-                  <span>[i]</span> VIEW DNA & SPECS
+                  View Details
                 </button>
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  <button 
-                    onClick={() => setSelectedItemForSample(item)}
-                    className="py-2.5 md:py-3 border border-border text-textSecondary rounded-xl text-[10px] md:text-xs font-black uppercase hover:bg-white/5 transition-all tracking-widest"
-                  >
-                    REQ_SAMPLE
-                  </button>
-                  <button 
-                    onClick={() => onBuyNow(item)}
-                    className="py-2.5 md:py-3 bg-primary text-black rounded-xl text-[10px] md:text-xs font-black uppercase hover:bg-primaryHover transition-all shadow-lg shadow-primary/10 tracking-widest"
-                  >
-                    BUY_NOW
-                  </button>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-4 -right-4 text-primary opacity-[0.03] text-6xl md:text-8xl font-black pointer-events-none group-hover:opacity-[0.07] transition-opacity uppercase font-mono">
-                {String(item.id).slice(-2).padStart(2, '0')}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setSelectedItemForSample(item); }}
+                  className="py-2.5 border border-border text-textSecondary rounded-xl text-[10px] font-bold hover:bg-surface-hover transition-all"
+                >
+                  Get Quote
+                </button>
               </div>
             </div>
-          ))}
+          </motion.div>
+        ))}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="py-20 text-center">
+          <p className="text-textMuted text-sm">No products match your search.</p>
         </div>
       )}
 
