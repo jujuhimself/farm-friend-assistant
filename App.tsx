@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { TRADE_NEWS } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
 import Ticker from './components/Ticker';
 import Hero from './components/Hero';
@@ -113,9 +114,8 @@ function App() {
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                {(() => {
-                  const { TRADE_NEWS } = require('./constants');
-                  return TRADE_NEWS.slice(0, 3).map((article: any) => (
+                 {(() => {
+                   return TRADE_NEWS.slice(0, 3).map((article: any) => (
                     <div
                       key={article.id}
                       onClick={() => setCurrentView('news')}
