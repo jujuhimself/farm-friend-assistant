@@ -1,8 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import SampleRequestModal from '../components/SampleRequestModal';
 import { PRODUCT_CATALOG } from '../constants';
+import { useListings } from '../hooks/useListings';
 
 interface MarketplaceProps {
   onAddToCart: (item: any) => void;
@@ -14,17 +14,48 @@ const CATEGORIES = ['All', 'Cereal Grains', 'Legume Grains', 'Nuts & Oilseeds', 
 const ORIGINS = ['All Regions', 'Dar es Salaam', 'Morogoro', 'Mwanza', 'Kilimanjaro', 'Mtwara'];
 
 const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onViewDetails }) => {
+  const { listings: dbListings, loading } = useListings();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedOrigin, setSelectedOrigin] = useState('All Regions');
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'newest'>('newest');
   const [selectedItemForSample, setSelectedItemForSample] = useState<any | null>(null);
 
+  // Merge DB listings with static catalog, preferring DB data
+  const allProducts = useMemo(() => {
+    if (dbListings.length > 0) {
+      const dbProducts = dbListings.map(l => {
+        const catalogMatch = PRODUCT_CATALOG.find(p => p.crop.toLowerCase() === l.crop.toLowerCase());
+        return {
+          ...(catalogMatch || {}),
+          id: l.id,
+          crop: l.crop,
+          category: (l as any).category || catalogMatch?.category || 'Cereal Grains',
+          origin: l.origin,
+          region: (l as any).region || l.origin,
+          volume: l.volume,
+          price: l.price,
+          priceUnit: (l as any).price_unit || 'USD/MT',
+          grade: l.grade || 'A',
+          supplier: l.supplier || 'Verified Supplier',
+          image: (l as any).image || catalogMatch?.image || 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop',
+          stockPeriod: (l as any).stock_period || catalogMatch?.stockPeriod || 'Available Now',
+          harvestSeason: (l as any).harvest_season || catalogMatch?.harvestSeason || '—',
+          description: l.description || catalogMatch?.description || '',
+        };
+      });
+      const dbCrops = new Set(dbListings.map(l => l.crop.toLowerCase()));
+      const catalogOnly = PRODUCT_CATALOG.filter(p => !dbCrops.has(p.crop.toLowerCase()));
+      return [...dbProducts, ...catalogOnly];
+    }
+    return PRODUCT_CATALOG;
+  }, [dbListings]);
+
   const filtered = useMemo(() => {
-    let items = PRODUCT_CATALOG.filter(item => {
+    let items = allProducts.filter(item => {
       const matchesSearch = item.crop.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             item.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.category.toLowerCase().includes(searchTerm.toLowerCase());
+                            (item.category || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
       const matchesOrigin = selectedOrigin === 'All Regions' || item.origin === selectedOrigin;
       return matchesSearch && matchesCategory && matchesOrigin;
@@ -34,7 +65,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
     else if (sortBy === 'price-desc') items.sort((a, b) => b.price - a.price);
     
     return items;
-  }, [searchTerm, selectedCategory, selectedOrigin, sortBy]);
+  }, [searchTerm, selectedCategory, selectedOrigin, sortBy, allProducts]);
 
   return (
     <div className="px-4 md:px-8 py-6 md:py-10 max-w-[1400px] mx-auto">
@@ -57,7 +88,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
         />
         
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Category filter */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide flex-1">
             {CATEGORIES.map(c => (
               <button
@@ -74,7 +104,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
             ))}
           </div>
           
-          {/* Origin & Sort */}
           <div className="flex gap-2">
             <select 
               value={selectedOrigin}
@@ -106,7 +135,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
             transition={{ delay: i * 0.05, duration: 0.3 }}
             className="bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/40 transition-all group cursor-pointer flex flex-col"
           >
-            {/* Image */}
             <div 
               onClick={() => onViewDetails(item)} 
               className="relative aspect-[4/3] overflow-hidden bg-background"
@@ -132,7 +160,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
               )}
             </div>
 
-            {/* Info */}
             <div className="p-4 flex-1 flex flex-col" onClick={() => onViewDetails(item)}>
               <h3 className="text-sm md:text-base font-bold text-textPrimary mb-3 group-hover:text-primary transition-colors leading-tight">
                 {item.crop}
@@ -160,7 +187,6 @@ const Marketplace: React.FC<MarketplaceProps> = ({ onAddToCart, onBuyNow, onView
               </div>
             </div>
 
-            {/* Actions */}
             <div className="px-4 pb-4 space-y-2">
               <button 
                 onClick={(e) => { e.stopPropagation(); onBuyNow(item); }}
