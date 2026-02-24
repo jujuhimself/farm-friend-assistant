@@ -1,12 +1,19 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { COMMODITIES } from '../constants';
+import { supabase } from '../src/integrations/supabase/client';
+
+interface PriceAlert {
+  id: string;
+  crop: string;
+  condition: string;
+  target_price: number;
+  active: boolean;
+}
 
 const PriceAlerts: React.FC = () => {
-  const [alerts, setAlerts] = useState([
-    { id: 1, crop: 'YELLOW MAIZE', condition: 'BELOW', target: 270, active: true },
-    { id: 2, crop: 'SESAME', condition: 'ABOVE', target: 1900, active: true },
-  ]);
+  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [newAlert, setNewAlert] = useState({
     crop: 'MAZ',
@@ -14,22 +21,50 @@ const PriceAlerts: React.FC = () => {
     target: '',
   });
 
-  const handleAddAlert = () => {
-    if (!newAlert.target) return;
-    const cropObj = COMMODITIES.find(c => c.ticker === newAlert.crop);
-    const alert = {
-      id: Date.now(),
-      crop: cropObj?.name || 'UNKNOWN',
-      condition: newAlert.condition,
-      target: parseFloat(newAlert.target),
-      active: true,
-    };
-    setAlerts([alert, ...alerts]);
-    setNewAlert({ crop: 'MAZ', condition: 'BELOW', target: '' });
+  const fetchAlerts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+    const { data } = await (supabase as any)
+      .from('price_alerts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('active', true)
+      .order('created_at', { ascending: false });
+    if (data) setAlerts(data);
+    setLoading(false);
   };
 
-  const removeAlert = (id: number) => {
-    setAlerts(alerts.filter(a => a.id !== id));
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const handleAddAlert = async () => {
+    if (!newAlert.target) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const cropObj = COMMODITIES.find(c => c.ticker === newAlert.crop);
+    const { data, error } = await (supabase as any)
+      .from('price_alerts')
+      .insert([{
+        user_id: user.id,
+        crop: cropObj?.name || 'UNKNOWN',
+        condition: newAlert.condition,
+        target_price: parseFloat(newAlert.target),
+        active: true,
+      }])
+      .select()
+      .single();
+
+    if (!error && data) {
+      setAlerts(prev => [data, ...prev]);
+      setNewAlert({ crop: 'MAZ', condition: 'BELOW', target: '' });
+    }
+  };
+
+  const removeAlert = async (id: string) => {
+    await (supabase as any).from('price_alerts').delete().eq('id', id);
+    setAlerts(prev => prev.filter(a => a.id !== id));
   };
 
   return (
@@ -104,7 +139,11 @@ const PriceAlerts: React.FC = () => {
         <div className="lg:col-span-8 space-y-6">
            <h3 className="text-sm font-black uppercase text-white tracking-widest border-l-4 border-primary pl-4">Active Sourcing Triggers</h3>
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {alerts.length === 0 ? (
+              {loading ? (
+                <div className="col-span-2 py-12 text-center">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </div>
+              ) : alerts.length === 0 ? (
                 <div className="col-span-2 py-20 text-center opacity-30 font-mono text-xs uppercase tracking-widest border border-dashed border-border rounded-2xl">
                    No Triggers Initialized
                 </div>
@@ -130,7 +169,7 @@ const PriceAlerts: React.FC = () => {
                         </div>
                         <div>
                            <p className="text-[9px] font-black text-textMuted uppercase tracking-widest mb-1">Trigger condition</p>
-                           <p className="text-[11px] font-black text-white uppercase">Notify if price goes {alert.condition} <span className="text-primary">${alert.target}/MT</span></p>
+                           <p className="text-[11px] font-black text-white uppercase">Notify if price goes {alert.condition} <span className="text-primary">${alert.target_price}/MT</span></p>
                         </div>
                      </div>
 

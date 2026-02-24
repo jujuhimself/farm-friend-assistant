@@ -1,27 +1,64 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useListings } from '../hooks/useListings';
+import { useOrders } from '../hooks/useOrders';
 import { supabase } from '../src/integrations/supabase/client';
 
 type SupplierTab = 'inventory' | 'rfqs' | 'orders' | 'performance' | 'profile';
 
 const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRole }) => {
   const { listings: dbListings, createListing } = useListings();
+  const { orders: dbOrders } = useOrders();
   const [activeTab, setActiveTab] = useState<SupplierTab>('inventory');
   const [showAddListing, setShowAddListing] = useState(false);
   const [selectedRfq, setSelectedRfq] = useState<any | null>(null);
   const [newListing, setNewListing] = useState({ crop: 'YELLOW MAIZE', origin: '', volume: '', price: '' });
   const [addingListing, setAddingListing] = useState(false);
+  const [openRfqs, setOpenRfqs] = useState<any[]>([]);
+  const [supplierProfile, setSupplierProfile] = useState<any>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
-  const mockInventory = [
-    { id: 'L-1', crop: 'YELLOW MAIZE', volume: '1,200 MT', price: 272, status: 'ACTIVE' },
-    { id: 'L-2', crop: 'SOYBEANS', volume: '450 MT', price: 438, status: 'ACTIVE' },
-    { id: 'L-3', crop: 'LONG GRAIN RICE', volume: '0 MT', price: 615, status: 'SOLD' },
-  ];
+  // Fetch open RFQs visible to suppliers
+  useEffect(() => {
+    const fetchRfqs = async () => {
+      const { data } = await (supabase as any)
+        .from('rfqs')
+        .select('*')
+        .eq('status', 'OPEN')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (data) setOpenRfqs(data);
+    };
+    fetchRfqs();
 
-  const inventory = dbListings.length > 0 ? dbListings : mockInventory;
+    const channel = supabase
+      .channel('supplier-rfqs')
+      .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'rfqs' }, fetchRfqs)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // Fetch supplier's own profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setSupplierProfile(data);
+    };
+    fetchProfile();
+  }, []);
+
+  const inventory = dbListings;
+
+  // Filter orders where current user is supplier
+  const supplierOrders = dbOrders;
 
   const handleAddListing = async () => {
     if (!newListing.origin || !newListing.volume || !newListing.price) return;
@@ -47,21 +84,48 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
     }
   };
 
-  const performanceData = [
-    { month: 'JAN', volume: 120, revenue: 32000 },
-    { month: 'FEB', volume: 150, revenue: 41000 },
-    { month: 'MAR', volume: 220, revenue: 58000 },
-    { month: 'APR', volume: 190, revenue: 49000 },
-  ];
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingStatus(orderId);
+    try {
+      await (supabase as any)
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId);
+    } catch (err) {
+      console.error('Status update failed:', err);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
-  const mockRfqs = [
-    { id: 'RFQ-882', buyer: 'AgriCorp UAE', crop: 'SESAME', volume: '200 MT', timeline: '14 DAYS' },
-    { id: 'RFQ-879', buyer: 'IndoFood Trading', crop: 'MAIZE', volume: '500 MT', timeline: '30 DAYS' },
-  ];
+  const ORDER_NEXT_STATUS: Record<string, string> = {
+    'ORDER CONFIRMED': 'AWAITING PAYMENT',
+    'AWAITING PAYMENT': 'PAYMENT ESCROWED',
+    'PAYMENT ESCROWED': 'INSPECTION SCHEDULED',
+    'INSPECTION SCHEDULED': 'INSPECTION PASSED',
+    'INSPECTION PASSED': 'GOODS PACKED',
+    'GOODS PACKED': 'GOODS SHIPPED',
+    'GOODS SHIPPED': 'IN TRANSIT',
+    'IN TRANSIT': 'CUSTOMS CLEARANCE',
+    'CUSTOMS CLEARANCE': 'ARRIVED AT DESTINATION',
+    'ARRIVED AT DESTINATION': 'DELIVERED & CONFIRMED',
+  };
 
-  const mockSupplierOrders = [
-    { id: 'ORD-98221', crop: 'YELLOW MAIZE', volume: '150 MT', buyer: 'AgriCorp UAE', status: 'SHIPPED', payment: 'ESCROWED', docs: ['Commercial Invoice', 'Packing List'], required: ['Phytosanitary Cert', 'Bill of Lading'] },
-  ];
+  // Compute performance from real orders
+  const performanceData = (() => {
+    const months: Record<string, { volume: number; revenue: number }> = {};
+    supplierOrders.forEach(o => {
+      const m = new Date(o.created_at).toLocaleString('en', { month: 'short' }).toUpperCase();
+      if (!months[m]) months[m] = { volume: 0, revenue: 0 };
+      const vol = parseInt(o.volume) || 0;
+      months[m].volume += vol;
+      months[m].revenue += o.price * vol;
+    });
+    return Object.entries(months).map(([month, d]) => ({ month, ...d }));
+  })();
+
+  const totalRevenue = supplierOrders.reduce((sum, o) => sum + (o.price * (parseInt(o.volume) || 0)), 0);
+  const totalVolume = supplierOrders.reduce((sum, o) => sum + (parseInt(o.volume) || 0), 0);
 
   const badges = [
     { icon: '🛡️', label: 'Verified Origin', color: 'primary' },
@@ -70,19 +134,14 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
     { icon: '📦', label: 'Bulk Specialist', color: 'white' },
   ];
 
-  const transactionHistory = [
-    { date: 'Oct 21, 2024', orderId: 'ORD-9712', amount: 32400, crop: 'Maize', status: 'PAID' },
-    { date: 'Nov 07, 2024', orderId: 'ORD-9755', amount: 12500, crop: 'Soybeans', status: 'PAID' },
-    { date: 'Nov 23, 2024', orderId: 'ORD-9810', amount: 45000, crop: 'Sesame', status: 'PAID' },
-    { date: 'Dec 11, 2024', orderId: 'ORD-9822', amount: 28500, crop: 'Rice', status: 'PAID' },
-  ];
-
   return (
     <div className="p-4 md:p-12 max-w-[1200px] mx-auto animate-in fade-in duration-500">
       <div className="mb-12 flex justify-between items-end border-b border-border pb-8">
         <div>
           <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tighter uppercase leading-none">Supplier Workspace</h1>
-          <p className="text-warning font-mono text-[10px] md:text-xs uppercase tracking-[0.3em]">Node: MAZAOHUB_TERMINAL // SECURITY_LEVEL_04</p>
+          <p className="text-warning font-mono text-[10px] md:text-xs uppercase tracking-[0.3em]">
+            {supplierProfile?.company_name || 'SUPPLIER'} // {inventory.length} LISTINGS · {supplierOrders.length} ORDERS
+          </p>
         </div>
         <button onClick={onSwitchRole} className="text-[10px] font-black uppercase tracking-widest text-textMuted hover:text-white transition-colors underline">Exit Supplier Portal</button>
       </div>
@@ -96,7 +155,7 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
               activeTab === tab ? 'bg-white text-black' : 'text-textMuted hover:text-white'
             }`}
           >
-            {tab === 'rfqs' ? 'RFQs (2)' : tab === 'performance' ? 'Analytics' : tab}
+            {tab === 'rfqs' ? `RFQs (${openRfqs.length})` : tab === 'performance' ? 'Analytics' : tab}
           </button>
         ))}
       </div>
@@ -109,29 +168,34 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
                 <span className="text-warning">📈</span> Export Volume History (MT)
               </h3>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
-                    <XAxis dataKey="month" stroke="#666" fontSize={10} />
-                    <YAxis hide />
-                    <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #2a2a2a', fontSize: '10px' }} />
-                    <Bar dataKey="volume" fill="#ffaa00" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {performanceData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={performanceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+                      <XAxis dataKey="month" stroke="#666" fontSize={10} />
+                      <YAxis hide />
+                      <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #2a2a2a', fontSize: '10px' }} />
+                      <Bar dataKey="volume" fill="#ffaa00" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-textMuted text-xs uppercase font-mono">No order data yet</div>
+                )}
               </div>
             </div>
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-background border border-border p-6 rounded-xl">
-                <p className="text-[9px] font-black text-textMuted uppercase mb-2">Platform Trust Score</p>
-                <p className="text-3xl font-black text-warning">4.9 / 5.0</p>
-                <p className="text-[10px] text-primary font-bold mt-2 uppercase">GOLD_TIER_FIRM</p>
+                <p className="text-[9px] font-black text-textMuted uppercase mb-2">Trust Score</p>
+                <p className="text-3xl font-black text-warning">{supplierProfile?.trust_score || 0} / 100</p>
+                <p className="text-[10px] text-primary font-bold mt-2 uppercase">{supplierProfile?.verified ? 'VERIFIED' : 'PENDING VERIFICATION'}</p>
               </div>
               <div className="bg-background border border-border p-6 rounded-xl">
-                <p className="text-[9px] font-black text-textMuted uppercase mb-2">Quality Pass Rate</p>
-                <p className="text-3xl font-black text-white">99.4%</p>
-                <div className="w-full bg-surface h-1.5 rounded-full mt-3 overflow-hidden">
-                  <div className="h-full bg-primary" style={{ width: '99.4%' }}></div>
-                </div>
+                <p className="text-[9px] font-black text-textMuted uppercase mb-2">Total Revenue</p>
+                <p className="text-3xl font-black text-white">${totalRevenue.toLocaleString()}</p>
+              </div>
+              <div className="bg-background border border-border p-6 rounded-xl">
+                <p className="text-[9px] font-black text-textMuted uppercase mb-2">Total Volume</p>
+                <p className="text-3xl font-black text-white">{totalVolume.toLocaleString()} MT</p>
               </div>
             </div>
           </motion.div>
@@ -144,18 +208,18 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
                 <div className="bg-surface border border-border p-10 rounded-2xl flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 opacity-5 font-black text-6xl pointer-events-none uppercase">RELIABILITY</div>
                   <div className="text-center md:text-left relative z-10">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Supplier DNA // Verified</p>
-                    <h2 className="text-7xl font-black text-white tracking-tighter mb-2">99.2%</h2>
-                    <p className="text-xs text-textMuted font-mono uppercase">Avg Reliability Score (Last 12 Months)</p>
+                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Supplier DNA // {supplierProfile?.verified ? 'Verified' : 'Unverified'}</p>
+                    <h2 className="text-7xl font-black text-white tracking-tighter mb-2">{supplierProfile?.trust_score || 0}</h2>
+                    <p className="text-xs text-textMuted font-mono uppercase">Trust Score</p>
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-6 relative z-10">
                     <div className="p-4 bg-background/50 border border-border rounded-xl">
-                      <p className="text-[9px] text-textMuted font-bold uppercase mb-1">On-Time Delivery</p>
-                      <p className="text-xl font-black text-white">100%</p>
+                      <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Total Orders</p>
+                      <p className="text-xl font-black text-white">{supplierOrders.length}</p>
                     </div>
                     <div className="p-4 bg-background/50 border border-border rounded-xl">
-                      <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Claim Rate</p>
-                      <p className="text-xl font-black text-primary">0.05%</p>
+                      <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Active Listings</p>
+                      <p className="text-xl font-black text-primary">{inventory.filter((i: any) => i.status === 'ACTIVE').length}</p>
                     </div>
                   </div>
                 </div>
@@ -175,48 +239,52 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
                 <div>
                   <h3 className="text-xs font-black uppercase text-white tracking-[0.3em] mb-6">Historical Trade Ledger</h3>
                   <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                    <table className="w-full text-[10px] font-mono uppercase">
-                      <thead className="bg-background/50 border-b border-border">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-textMuted">Date</th>
-                          <th className="px-6 py-4 text-left text-textMuted">Ref</th>
-                          <th className="px-6 py-4 text-left text-textMuted">Commodity</th>
-                          <th className="px-6 py-4 text-right text-textMuted">Value (USD)</th>
-                          <th className="px-6 py-4 text-right text-textMuted">Finality</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {transactionHistory.map((tr, i) => (
-                          <tr key={i} className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 text-textMuted">{tr.date}</td>
-                            <td className="px-6 py-4 text-white font-bold">{tr.orderId}</td>
-                            <td className="px-6 py-4 text-textSecondary">{tr.crop}</td>
-                            <td className="px-6 py-4 text-right text-white font-black">${tr.amount.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-right">
-                              <span className="text-primary font-black tracking-widest">SUCCESS</span>
-                            </td>
+                    {supplierOrders.length > 0 ? (
+                      <table className="w-full text-[10px] font-mono uppercase">
+                        <thead className="bg-background/50 border-b border-border">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-textMuted">Date</th>
+                            <th className="px-6 py-4 text-left text-textMuted">Ref</th>
+                            <th className="px-6 py-4 text-left text-textMuted">Commodity</th>
+                            <th className="px-6 py-4 text-right text-textMuted">Value (USD)</th>
+                            <th className="px-6 py-4 text-right text-textMuted">Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {supplierOrders.map((o) => (
+                            <tr key={o.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 text-textMuted">{new Date(o.created_at).toLocaleDateString()}</td>
+                              <td className="px-6 py-4 text-white font-bold">{o.id.slice(0, 8)}</td>
+                              <td className="px-6 py-4 text-textSecondary">{o.crop}</td>
+                              <td className="px-6 py-4 text-right text-white font-black">${(o.price * (parseInt(o.volume) || 0)).toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right">
+                                <span className={`font-black tracking-widest ${o.status === 'DELIVERED & CONFIRMED' ? 'text-primary' : 'text-warning'}`}>{o.status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="py-12 text-center text-textMuted text-xs uppercase font-mono">No orders yet</div>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="md:col-span-4 space-y-6">
                 <div className="bg-white p-6 rounded-2xl">
-                  <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4">Node Bio</p>
+                  <p className="text-[10px] font-black text-black uppercase tracking-widest mb-4">Company Bio</p>
                   <p className="text-[11px] text-black leading-relaxed font-mono font-bold uppercase">
-                    Mazaohub is a Tier-1 aggregator based in Mbeya, specializing in Grade-A Yellow Maize and Soybeans. Operational since 2019 with a focus on UAE and EU export standards.
+                    {supplierProfile?.bio || supplierProfile?.company_name || 'No bio set. Update your profile to add a description.'}
                   </p>
                 </div>
                 <div className="bg-surface border border-border p-6 rounded-2xl space-y-4">
                   <h4 className="text-[10px] font-black text-textMuted uppercase tracking-widest">Protocol Stats</h4>
                   {[
-                    { label: 'Platform Seniority', val: '24 MONTHS' },
+                    { label: 'Member Since', val: supplierProfile?.created_at ? new Date(supplierProfile.created_at).toLocaleDateString('en', { month: 'short', year: 'numeric' }) : '—' },
                     { label: 'Active Listings', val: `${inventory.filter((i: any) => i.status === 'ACTIVE').length}` },
-                    { label: 'Total Volume Moved', val: '4,200 MT' },
-                    { label: 'Avg Lead Time', val: '48H' },
+                    { label: 'Total Volume Moved', val: `${totalVolume.toLocaleString()} MT` },
+                    { label: 'Country', val: supplierProfile?.country || '—' },
                   ].map((s, i) => (
                     <div key={i} className="flex justify-between items-center py-2 border-b border-border last:border-0">
                       <span className="text-[10px] text-textSecondary font-mono">{s.label}</span>
@@ -224,9 +292,6 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
                     </div>
                   ))}
                 </div>
-                <button className="w-full py-4 border-2 border-border rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-white transition-all">
-                  Preview Public Storefront
-                </button>
               </div>
             </div>
           </motion.div>
@@ -240,102 +305,123 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
                 + Add New Listing
               </button>
             </div>
-            <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-              <table className="w-full font-mono text-xs">
-                <thead className="bg-background/50 text-textMuted uppercase border-b border-border">
-                  <tr>
-                    <th className="px-6 py-4 text-left">Ref</th>
-                    <th className="px-6 py-4 text-left">Commodity</th>
-                    <th className="px-6 py-4 text-left">Volume</th>
-                    <th className="px-6 py-4 text-left">Price (MT)</th>
-                    <th className="px-6 py-4 text-left">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {inventory.map((item: any) => (
-                    <tr key={item.id} className="hover:bg-white/5 transition-colors group">
-                      <td className="px-6 py-4 text-textSecondary">{typeof item.id === 'string' && item.id.length > 10 ? item.id.slice(0, 8) + '...' : item.id}</td>
-                      <td className="px-6 py-4 text-white font-bold">{item.crop}</td>
-                      <td className="px-6 py-4 text-textSecondary">{item.volume}</td>
-                      <td className="px-6 py-4 text-white font-bold">${item.price}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${item.status === 'ACTIVE' ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-primary opacity-0 group-hover:opacity-100 transition-opacity uppercase font-black text-[10px] tracking-widest">Edit</button>
-                      </td>
+            {inventory.length > 0 ? (
+              <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+                <table className="w-full font-mono text-xs">
+                  <thead className="bg-background/50 text-textMuted uppercase border-b border-border">
+                    <tr>
+                      <th className="px-6 py-4 text-left">Ref</th>
+                      <th className="px-6 py-4 text-left">Commodity</th>
+                      <th className="px-6 py-4 text-left">Volume</th>
+                      <th className="px-6 py-4 text-left">Price (MT)</th>
+                      <th className="px-6 py-4 text-left">Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {inventory.map((item: any) => (
+                      <tr key={item.id} className="hover:bg-white/5 transition-colors group">
+                        <td className="px-6 py-4 text-textSecondary">{typeof item.id === 'string' && item.id.length > 10 ? item.id.slice(0, 8) + '...' : item.id}</td>
+                        <td className="px-6 py-4 text-white font-bold">{item.crop}</td>
+                        <td className="px-6 py-4 text-textSecondary">{item.volume}</td>
+                        <td className="px-6 py-4 text-white font-bold">${item.price}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black ${item.status === 'ACTIVE' ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="text-primary opacity-0 group-hover:opacity-100 transition-opacity uppercase font-black text-[10px] tracking-widest">Edit</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="py-16 text-center border-2 border-dashed border-border rounded-2xl">
+                <p className="text-textMuted text-xs uppercase font-mono mb-4">No listings yet</p>
+                <button onClick={() => setShowAddListing(true)} className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline">Create your first listing →</button>
+              </div>
+            )}
           </motion.div>
         )}
 
         {activeTab === 'rfqs' && (
-          <motion.div key="rfqs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {mockRfqs.map(rfq => (
-              <div key={rfq.id} className="bg-surface border border-border p-8 rounded-2xl hover:border-warning/50 transition-all group">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <h4 className="text-lg font-black text-white uppercase tracking-tight">{rfq.buyer}</h4>
-                    <p className="text-[10px] text-textMuted font-mono uppercase tracking-widest">{rfq.id} // URGENT_BID</p>
+          <motion.div key="rfqs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {openRfqs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {openRfqs.map(rfq => (
+                  <div key={rfq.id} className="bg-surface border border-border p-8 rounded-2xl hover:border-warning/50 transition-all group">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h4 className="text-lg font-black text-white uppercase tracking-tight">{rfq.crop}</h4>
+                        <p className="text-[10px] text-textMuted font-mono uppercase tracking-widest">{rfq.id.slice(0, 8)} // {rfq.origin || 'ANY ORIGIN'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-black text-warning tracking-tighter">{rfq.volume}</p>
+                        <p className="text-[9px] text-textMuted uppercase font-black">{rfq.delivery_timeline || '30 DAYS'}</p>
+                      </div>
+                    </div>
+                    {rfq.notes && <p className="text-[10px] text-textSecondary mb-4 font-mono uppercase">{rfq.notes}</p>}
+                    <div className="flex gap-4">
+                      <button onClick={() => setSelectedRfq(rfq)} className="flex-1 py-3 bg-warning text-black font-black uppercase text-[10px] rounded-xl hover:bg-white transition-all tracking-widest">Submit Quote</button>
+                      <button className="flex-1 py-3 border border-border text-textMuted font-black uppercase text-[10px] rounded-xl hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all">Decline</button>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xl font-black text-warning tracking-tighter">{rfq.volume}</p>
-                    <p className="text-[9px] text-textMuted uppercase font-black">{rfq.crop}</p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <button onClick={() => setSelectedRfq(rfq)} className="flex-1 py-3 bg-warning text-black font-black uppercase text-[10px] rounded-xl hover:bg-white transition-all tracking-widest">Submit Quote</button>
-                  <button className="flex-1 py-3 border border-border text-textMuted font-black uppercase text-[10px] rounded-xl hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all">Decline</button>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="py-16 text-center border-2 border-dashed border-border rounded-2xl">
+                <p className="text-textMuted text-xs uppercase font-mono">No open RFQs at this time</p>
+              </div>
+            )}
           </motion.div>
         )}
 
         {activeTab === 'orders' && (
           <motion.div key="orders" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
-            {mockSupplierOrders.map(order => (
+            {supplierOrders.length > 0 ? supplierOrders.map(order => (
               <div key={order.id} className="bg-surface border border-border p-8 rounded-2xl">
                 <div className="flex flex-col md:flex-row justify-between gap-6 mb-8 border-b border-border/30 pb-6">
                   <div>
-                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{order.id} // {order.crop}</h4>
-                    <p className="text-xs text-textMuted font-mono uppercase tracking-widest">Buyer: {order.buyer} • Volume: {order.volume}</p>
+                    <h4 className="text-2xl font-black text-white uppercase tracking-tighter">{order.id.slice(0, 8)} // {order.crop}</h4>
+                    <p className="text-xs text-textMuted font-mono uppercase tracking-widest">Volume: {order.volume} • Status: {order.status}</p>
                   </div>
-                  <button className="bg-primary text-black text-[10px] font-black uppercase px-6 py-3 rounded-xl">Mark Shipped</button>
+                  {ORDER_NEXT_STATUS[order.status || ''] && (
+                    <button
+                      onClick={() => handleUpdateOrderStatus(order.id, ORDER_NEXT_STATUS[order.status || ''])}
+                      disabled={updatingStatus === order.id}
+                      className="bg-primary text-black text-[10px] font-black uppercase px-6 py-3 rounded-xl disabled:opacity-50"
+                    >
+                      {updatingStatus === order.id ? 'Updating...' : `→ ${ORDER_NEXT_STATUS[order.status || '']}`}
+                    </button>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <h5 className="text-[9px] font-black text-textMuted uppercase tracking-widest mb-3">Uploaded Documents</h5>
-                    <div className="space-y-2">
-                      {order.docs.map((doc, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
-                          <span className="text-primary text-xs">✓</span>
-                          <span className="text-[10px] font-mono text-white uppercase">{doc}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Price</p>
+                    <p className="text-xs font-bold text-white">${order.price}/MT</p>
                   </div>
                   <div>
-                    <h5 className="text-[9px] font-black text-textMuted uppercase tracking-widest mb-3">Required Documents</h5>
-                    <div className="space-y-2">
-                      {order.required.map((doc, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-warning/20">
-                          <span className="text-warning text-xs">⚠</span>
-                          <span className="text-[10px] font-mono text-textMuted uppercase">{doc}</span>
-                          <button className="ml-auto text-[9px] font-black text-primary uppercase border border-primary/20 px-2 py-0.5 rounded">Upload</button>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Destination</p>
+                    <p className="text-xs font-bold text-white">{order.destination || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Incoterm</p>
+                    <p className="text-xs font-bold text-white">{order.incoterm || 'FOB'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] text-textMuted font-bold uppercase mb-1">Payment</p>
+                    <p className="text-xs font-bold text-warning">{(order as any).payment_status || 'PENDING'}</p>
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="py-16 text-center border-2 border-dashed border-border rounded-2xl">
+                <p className="text-textMuted text-xs uppercase font-mono">No orders assigned to you yet</p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -385,7 +471,7 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setSelectedRfq(null)}></div>
           <div className="relative w-full max-w-[500px] bg-surface border-2 border-warning/30 rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 border-b border-border pb-4">Submit Quote: {selectedRfq.id}</h2>
+            <h2 className="text-xl font-black text-white uppercase tracking-tighter mb-6 border-b border-border pb-4">Submit Quote: {selectedRfq.id.slice(0, 8)}</h2>
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-xs font-mono uppercase">
                 <span className="text-textMuted">Crop</span>
@@ -397,7 +483,7 @@ const SupplierDashboard: React.FC<{ onSwitchRole: () => void }> = ({ onSwitchRol
               </div>
               <div className="flex justify-between text-xs font-mono uppercase">
                 <span className="text-textMuted">Delivery Timeline</span>
-                <span className="text-white font-bold">{selectedRfq.timeline}</span>
+                <span className="text-white font-bold">{selectedRfq.delivery_timeline || '30 DAYS'}</span>
               </div>
               <div className="space-y-2 pt-2">
                 <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Your Quote Price (USD/MT)</label>
