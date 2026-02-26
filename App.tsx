@@ -18,6 +18,7 @@ import SupplierDashboard from './views/SupplierDashboard';
 import AdminConsole from './views/AdminConsole';
 import PriceAlerts from './views/PriceAlerts';
 import NewsFeed from './views/NewsFeed';
+import MarketIntelligence from './views/MarketIntelligence';
 import Profile from './views/Profile';
 import Settings from './views/Settings';
 import Registration from './views/Registration';
@@ -25,7 +26,7 @@ import GrainAI from './components/GrainAI';
 import BottomNav from './components/BottomNav';
 import { useAuth } from './hooks/useAuth';
 
-export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts' | 'news' | 'registration' | 'settings';
+export type ViewType = 'dashboard' | 'marketplace' | 'orders' | 'rfq' | 'profile' | 'checkout' | 'details' | 'inventory' | 'admin' | 'alerts' | 'news' | 'registration' | 'settings' | 'intel';
 export type UserRole = 'buyer' | 'supplier' | 'admin' | 'guest';
 
 function App() {
@@ -95,6 +96,8 @@ function App() {
         return <RFQManager />;
       case 'news':
         return <NewsFeed onBack={() => setCurrentView('dashboard')} />;
+      case 'intel':
+        return <MarketIntelligence />;
       case 'alerts':
         return <PriceAlerts />;
       case 'profile':
