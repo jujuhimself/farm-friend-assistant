@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
       title: 'SOURCING',
       items: [
         { id: 'rfq', icon: '📝', label: 'REQUEST QUOTE' },
+        { id: 'intel', icon: '🧠', label: 'INTEL' },
         { id: 'alerts', icon: '🔔', label: 'PRICE ALERTS' },
         { id: 'news', icon: '📰', label: 'NEWS' },
       ]
@@ -57,6 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
       items: [
         { id: 'dashboard', icon: '📊', label: 'OVERVIEW' },
         { id: 'marketplace', icon: '🔍', label: 'MARKETPLACE' },
+        { id: 'intel', icon: '🧠', label: 'INTEL' },
         { id: 'news', icon: '📰', label: 'NEWS' },
       ]
     }
