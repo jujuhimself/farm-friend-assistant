@@ -112,17 +112,18 @@ function App() {
           <>
             <Hero onRfqClick={() => protectedNavigate('rfq')} onBuyClick={() => setCurrentView('marketplace')} />
             <GrainGrid onViewDetails={showDetails} />
-            <ActivityFeed />
             <QuickActions onViewChange={(v) => protectedNavigate(v as ViewType)} />
+            <ActivityFeed />
+            {/* Latest News Preview */}
             <section className="py-8 md:py-16 px-4 max-w-[1400px] mx-auto">
-              <div className="flex items-center gap-4 mb-6 md:mb-10">
-                <h2 className="text-lg md:text-2xl font-bold whitespace-nowrap uppercase tracking-tighter">Latest News</h2>
-                <div className="h-px bg-border border-dashed border-t flex-1"></div>
-                <button onClick={() => setCurrentView('news')} className="text-[10px] font-bold text-primary uppercase tracking-widest hover:underline whitespace-nowrap">
-                  View All →
+              <div className="flex items-center gap-3 mb-6">
+                <h2 className="text-base md:text-xl font-black whitespace-nowrap uppercase tracking-tighter">Latest News</h2>
+                <div className="h-px bg-border flex-1" />
+                <button onClick={() => setCurrentView('news')} className="text-[9px] font-bold text-primary uppercase tracking-widest hover:underline whitespace-nowrap">
+                  All →
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {TRADE_NEWS.slice(0, 3).map((article: any) => (
                   <div key={article.id} onClick={() => setCurrentView('news')} className="bg-surface border border-border rounded-xl overflow-hidden hover:border-primary/30 transition-all cursor-pointer group">
                     {article.image && (
@@ -130,13 +131,13 @@ function App() {
                         <img src={article.image} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                       </div>
                     )}
-                    <div className="p-4">
+                    <div className="p-3 md:p-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[9px] font-bold text-primary uppercase">#{article.category}</span>
-                        <span className="text-[9px] text-textMuted">{article.date}</span>
+                        <span className="text-[8px] font-bold text-primary uppercase">#{article.category}</span>
+                        <span className="text-[8px] text-text-muted">{article.date}</span>
                       </div>
-                      <h3 className="text-sm font-bold group-hover:text-primary transition-colors leading-tight mb-2">{article.title}</h3>
-                      <p className="text-[11px] text-textMuted line-clamp-2">{article.summary}</p>
+                      <h3 className="text-xs md:text-sm font-bold group-hover:text-primary transition-colors leading-tight mb-1">{article.title}</h3>
+                      <p className="text-[10px] text-text-muted line-clamp-2">{article.summary}</p>
                     </div>
                   </div>
                 ))}
@@ -150,16 +151,16 @@ function App() {
   if (auth.loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-textMuted text-xs font-mono uppercase tracking-widest">Loading...</p>
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-text-muted text-[10px] font-mono uppercase tracking-widest">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background font-mono selection:bg-primary/30 text-textPrimary overflow-x-hidden">
+    <div className="min-h-screen bg-background font-mono text-text-primary overflow-x-hidden">
       <Ticker cartCount={cart.length} />
       <Sidebar 
         currentView={currentView} 
@@ -170,30 +171,27 @@ function App() {
       <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
       <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
 
-      <main className={`lg:ml-[240px] ${currentView === 'dashboard' ? 'pt-0' : 'pt-[60px]'} relative pb-24 lg:pb-0`}>
+      <main className={`lg:ml-[200px] xl:ml-[220px] pt-12 md:pt-14 pb-20 lg:pb-0 relative`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView + userRole}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
             {renderView()}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      <div className="fixed bottom-[88px] lg:bottom-8 right-4 z-40">
-        <motion.button 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setIsAiOpen(true)}
-          className="w-12 h-12 md:w-14 md:h-14 bg-primary text-background rounded-full shadow-[0_0_30px_rgba(0,255,136,0.3)] flex items-center justify-center text-lg md:text-xl transition-transform"
-        >
-          ✨
-        </motion.button>
-      </div>
+      {/* AI FAB */}
+      <button 
+        onClick={() => setIsAiOpen(true)}
+        className="fixed bottom-20 lg:bottom-6 right-3 lg:right-6 z-40 w-11 h-11 md:w-12 md:h-12 bg-primary text-background rounded-full shadow-[0_0_20px_rgba(0,255,136,0.3)] flex items-center justify-center text-base transition-transform active:scale-90"
+      >
+        ✨
+      </button>
 
       <GrainAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
     </div>

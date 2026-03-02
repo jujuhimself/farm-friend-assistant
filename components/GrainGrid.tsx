@@ -4,15 +4,14 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { COMMODITIES, PRODUCT_CATALOG } from '../constants';
 
-// Map each commodity ticker to a matching PRODUCT_CATALOG item for deep linking
 const COMMODITY_PRODUCT_MAP: Record<string, string> = {
-  'MAZ': 'P-002', // Yellow Maize
-  'RIC': 'P-001', // Long Grain Rice
-  'CSW': 'P-012', // Cashew Nuts
-  'SOY': 'P-004', // Groundnuts (closest)
-  'SES': 'P-006', // Mung Beans (closest oilseed)
-  'AVO': 'P-010', // Green Peas (placeholder — avocados not in catalog)
-  'VNL': 'P-008', // Yellow Beans (placeholder)
+  'MAZ': 'P-002',
+  'RIC': 'P-001',
+  'CSW': 'P-012',
+  'SOY': 'P-004',
+  'SES': 'P-006',
+  'AVO': 'P-010',
+  'VNL': 'P-008',
 };
 
 const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }> = ({ commodity, onDetails }) => {
@@ -22,7 +21,6 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
     if (product) {
       onDetails({ ...product, ...commodity, id: product.id });
     } else {
-      // Fallback: create a synthetic product from commodity data
       onDetails({
         id: commodity.ticker,
         crop: commodity.name,
@@ -37,7 +35,7 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
         image: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop',
         stockPeriod: 'Ongoing',
         harvestSeason: 'Varies',
-        description: `${commodity.name} — tracked on the GrainX global commodity index. Current market price reflects aggregated spot prices across Tanzanian growing regions.`,
+        description: `${commodity.name} — tracked on the GrainX global commodity index.`,
         growingRegions: [],
         seasonality: [],
         logistics: { portOfExport: 'Dar es Salaam Port', transitToDubai: '12-14 days', transitToEurope: '22-26 days', transitToChina: '28-32 days', containerType: '20ft / 40ft FCL', minOrder: 'Inquire' },
@@ -49,38 +47,38 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
 
   return (
     <motion.div 
-      whileHover={{ y: -5, scale: 1.02 }}
+      whileHover={{ y: -3 }}
       onClick={handleClick}
-      className="bg-surface border border-border rounded-2xl p-5 md:p-6 hover:border-primary/50 transition-all group cursor-pointer h-[220px] md:h-[280px] flex flex-col justify-between relative overflow-hidden shrink-0 w-[260px] md:w-full"
+      className="bg-surface border border-border rounded-xl p-4 md:p-5 hover:border-primary/50 transition-all group cursor-pointer flex flex-col justify-between relative overflow-hidden min-w-[200px] w-[200px] md:w-full md:min-w-0 h-[200px] md:h-[240px] flex-shrink-0"
     >
-      <div className="absolute top-0 right-0 p-4 opacity-[0.05] text-4xl md:text-5xl font-black select-none pointer-events-none">
+      <div className="absolute top-0 right-0 p-3 opacity-[0.04] text-3xl md:text-4xl font-black select-none pointer-events-none">
         {commodity.ticker}
       </div>
 
       <div className="relative z-10">
-        <div className="flex justify-between items-start mb-3 md:mb-4">
-          <span className="text-[10px] font-mono font-bold px-2 py-1 bg-background border border-border rounded text-textMuted">
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 bg-background border border-border rounded text-text-muted">
             {commodity.ticker}
           </span>
-          <span className={`text-xs font-bold ${commodity.change >= 0 ? 'text-primary' : 'text-danger'}`}>
+          <span className={`text-[10px] font-bold ${commodity.change >= 0 ? 'text-primary' : 'text-danger'}`}>
             {commodity.change >= 0 ? '▲' : '▼'}{Math.abs(commodity.change)}%
           </span>
         </div>
         
-        <h4 className="text-base md:text-lg font-black mb-1 text-white uppercase tracking-tight group-hover:text-primary transition-colors leading-tight">
+        <h4 className="text-sm md:text-base font-black text-white uppercase tracking-tight group-hover:text-primary transition-colors leading-tight">
           {commodity.name}
         </h4>
-        <p className="text-[9px] md:text-[10px] text-textMuted font-bold uppercase tracking-widest">Global Index Sync</p>
+        <p className="text-[8px] md:text-[9px] text-text-muted font-bold uppercase tracking-widest">Index</p>
       </div>
       
-      <div className="h-12 md:h-16 w-full mb-3 md:mb-4">
+      <div className="h-10 md:h-14 w-full my-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={commodity.history}>
             <Line 
               type="monotone" 
               dataKey="value" 
               stroke={commodity.change >= 0 ? '#00ff88' : '#ff3366'} 
-              strokeWidth={2} 
+              strokeWidth={1.5} 
               dot={false} 
             />
             <YAxis hide domain={['dataMin', 'dataMax']} />
@@ -90,14 +88,14 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
 
       <div className="flex justify-between items-end relative z-10">
         <div>
-          <p className="text-xl md:text-2xl font-mono font-black text-white leading-none mb-1">${commodity.price.toLocaleString()}</p>
-          <p className="text-[8px] md:text-[9px] text-textMuted uppercase font-black tracking-widest">USD PER MT</p>
+          <p className="text-lg md:text-xl font-mono font-black text-white leading-none">${commodity.price.toLocaleString()}</p>
+          <p className="text-[7px] md:text-[8px] text-text-muted uppercase font-black tracking-widest">USD/MT</p>
         </div>
         <button 
           onClick={(e) => { e.stopPropagation(); handleClick(); }}
-          className="text-[9px] md:text-[10px] font-black text-primary border border-primary/30 px-3 md:px-4 py-1.5 md:py-2 rounded hover:bg-primary hover:text-black transition-all uppercase tracking-widest"
+          className="text-[8px] md:text-[9px] font-black text-primary border border-primary/30 px-2 md:px-3 py-1 md:py-1.5 rounded hover:bg-primary hover:text-black transition-all uppercase tracking-wider"
         >
-          ANALYZE
+          VIEW
         </button>
       </div>
     </motion.div>
@@ -110,30 +108,22 @@ interface GrainGridProps {
 
 const GrainGrid: React.FC<GrainGridProps> = ({ onViewDetails }) => {
   return (
-    <section className="py-12 md:py-20 px-4 md:px-6 max-w-[1400px] mx-auto">
-      <div className="flex items-center gap-4 md:gap-6 mb-8 md:mb-12">
-        <div className="flex flex-col">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tighter">Market Index</h2>
-          <p className="text-textMuted font-mono text-[10px] md:text-xs uppercase tracking-widest">Real-time Commodity DNA</p>
+    <section className="py-8 md:py-16 px-4 md:px-6 max-w-[1400px] mx-auto">
+      <div className="flex items-center gap-3 mb-6 md:mb-10">
+        <div>
+          <h2 className="text-base md:text-xl lg:text-2xl font-black uppercase tracking-tighter">Market Index</h2>
+          <p className="text-text-muted font-mono text-[9px] md:text-[10px] uppercase tracking-widest">Real-time Pricing</p>
         </div>
-        <div className="h-px bg-border flex-1 border-dashed border-t"></div>
+        <div className="h-px bg-border flex-1" />
       </div>
 
-      {/* Mobile Carousel / Desktop Grid Container */}
-      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 overflow-x-auto pb-4 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory">
+      {/* Mobile: Horizontal scroll / Desktop: Grid */}
+      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 overflow-x-auto pb-3 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
         {COMMODITIES.map((c) => (
           <div key={c.ticker} className="snap-start">
             <CommodityCard commodity={c} onDetails={onViewDetails} />
           </div>
         ))}
-      </div>
-
-      <div className="mt-8 md:mt-12 text-center">
-        <button className="inline-flex items-center gap-3 md:gap-4 text-textMuted hover:text-primary transition-all group">
-          <span className="h-px w-8 md:w-12 bg-textMuted group-hover:bg-primary transition-all"></span>
-          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] md:tracking-[0.4em]">Expand Terminal View</span>
-          <span className="h-px w-8 md:w-12 bg-textMuted group-hover:bg-primary transition-all"></span>
-        </button>
       </div>
     </section>
   );

@@ -13,29 +13,29 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentView, onViewChange }) => {
     { id: 'marketplace', icon: '📊', label: 'Market' },
     { id: 'rfq', icon: '📝', label: 'RFQ' },
     { id: 'orders', icon: '🚢', label: 'Track' },
-    { id: 'profile', icon: '👤', label: 'User' },
+    { id: 'profile', icon: '👤', label: 'Me' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-[72px] bg-background border-t border-border flex items-center justify-around px-2 z-50 lg:hidden shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-t border-border flex items-center justify-around px-1 z-50 lg:hidden safe-area-bottom">
       {items.map((item) => {
         const isActive = currentView === item.id;
         return (
           <button
             key={item.id}
             onClick={() => onViewChange(item.id as ViewType)}
-            className={`flex flex-col items-center justify-center gap-1 transition-all flex-1 py-1 rounded-xl ${
-              isActive ? 'text-primary' : 'text-textMuted hover:text-white'
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 rounded-lg transition-all relative ${
+              isActive ? 'text-primary' : 'text-text-muted'
             }`}
           >
-            <span className={`text-xl transition-transform ${isActive ? 'scale-110 -translate-y-1' : ''}`}>
+            <span className={`text-lg transition-transform ${isActive ? 'scale-110' : ''}`}>
               {item.icon}
             </span>
-            <span className={`text-[10px] font-bold uppercase tracking-tight font-mono ${isActive ? 'opacity-100' : 'opacity-60'}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-tight font-mono ${isActive ? 'opacity-100' : 'opacity-50'}`}>
               {item.label}
             </span>
             {isActive && (
-              <div className="absolute top-0 w-8 h-[2px] bg-primary rounded-full blur-[1px]"></div>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[2px] bg-primary rounded-full" />
             )}
           </button>
         );
