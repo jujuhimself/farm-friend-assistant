@@ -12,7 +12,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle, userRole }) => {
   const BUYER_GROUPS = [
     {
-      title: 'OPERATIONS HUB',
+      title: 'OPERATIONS',
       items: [
         { id: 'dashboard', icon: '📊', label: 'DASHBOARD' },
         { id: 'marketplace', icon: '🔍', label: 'MARKETPLACE' },
@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
       items: [
         { id: 'rfq', icon: '📝', label: 'REQUEST QUOTE' },
         { id: 'intel', icon: '🧠', label: 'INTEL' },
-        { id: 'alerts', icon: '🔔', label: 'PRICE ALERTS' },
+        { id: 'alerts', icon: '🔔', label: 'ALERTS' },
         { id: 'news', icon: '📰', label: 'NEWS' },
       ]
     }
@@ -34,27 +34,27 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
     {
       title: 'SUPPLY HUB',
       items: [
-        { id: 'inventory', icon: '🚜', label: 'MY INVENTORY' },
-        { id: 'rfqs', icon: '📨', label: 'PENDING RFQS' },
-        { id: 'orders', icon: '📦', label: 'ACTIVE ORDERS' },
+        { id: 'inventory', icon: '🚜', label: 'INVENTORY' },
+        { id: 'rfqs', icon: '📨', label: 'RFQS' },
+        { id: 'orders', icon: '📦', label: 'ORDERS' },
       ]
     }
   ];
 
   const ADMIN_GROUPS = [
     {
-      title: 'PLATFORM ADMIN',
+      title: 'ADMIN',
       items: [
         { id: 'verification', icon: '🛡️', label: 'VERIFICATIONS' },
-        { id: 'transactions', icon: '📈', label: 'GLOBAL STATS' },
-        { id: 'disputes', icon: '⚖️', label: 'DISPUTE LOG' },
+        { id: 'transactions', icon: '📈', label: 'STATS' },
+        { id: 'disputes', icon: '⚖️', label: 'DISPUTES' },
       ]
     }
   ];
 
   const GUEST_GROUPS = [
     {
-      title: 'PUBLIC ACCESS',
+      title: 'EXPLORE',
       items: [
         { id: 'dashboard', icon: '📊', label: 'OVERVIEW' },
         { id: 'marketplace', icon: '🔍', label: 'MARKETPLACE' },
@@ -67,64 +67,64 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
   const groups = userRole === 'admin' ? ADMIN_GROUPS : userRole === 'supplier' ? SUPPLIER_GROUPS : userRole === 'guest' ? GUEST_GROUPS : BUYER_GROUPS;
 
   return (
-    <aside className="fixed top-[60px] left-0 bottom-0 w-[240px] bg-background border-r border-border hidden lg:flex flex-col z-40">
-      <div className="flex-1 overflow-y-auto py-8">
-        <div className="px-6 mb-8">
-           <div className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${
-             userRole === 'admin' ? 'bg-danger/20 text-danger' : 
-             userRole === 'supplier' ? 'bg-warning/20 text-warning' : 
-             userRole === 'guest' ? 'bg-white/5 text-textMuted' : 'bg-primary/20 text-primary'
-           }`}>
-             MODE: {userRole.toUpperCase()}
-           </div>
+    <aside className="fixed top-12 md:top-14 left-0 bottom-0 w-[200px] lg:w-[220px] bg-background border-r border-border hidden lg:flex flex-col z-40">
+      <div className="flex-1 overflow-y-auto py-6">
+        <div className="px-4 mb-6">
+          <div className={`text-[9px] font-black uppercase px-2 py-1 rounded inline-block ${
+            userRole === 'admin' ? 'bg-danger/20 text-danger' : 
+            userRole === 'supplier' ? 'bg-warning/20 text-warning' : 
+            userRole === 'guest' ? 'bg-surface text-text-muted' : 'bg-primary/20 text-primary'
+          }`}>
+            {userRole.toUpperCase()}
+          </div>
         </div>
         
         {groups.map((group, gIdx) => (
-          <div key={gIdx} className="mb-10">
-            <h4 className="px-6 text-[11px] font-bold text-textMuted uppercase tracking-widest mb-6">{group.title}</h4>
-            <nav className="space-y-1">
+          <div key={gIdx} className="mb-8">
+            <h4 className="px-4 text-[9px] font-bold text-text-muted uppercase tracking-widest mb-3">{group.title}</h4>
+            <nav className="space-y-0.5">
               {group.items.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => onViewChange(item.id as ViewType)}
-                  className={`w-full flex items-center gap-4 px-6 py-3 transition-all group border-l-4 ${
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 transition-all border-l-2 text-left ${
                     currentView === item.id 
                       ? 'text-primary border-primary bg-primary/5' 
-                      : 'text-textMuted border-transparent hover:text-white hover:bg-surface'
+                      : 'text-text-muted border-transparent hover:text-white hover:bg-surface'
                   }`}
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  <span className="text-xs font-bold font-mono tracking-tight uppercase">{item.label}</span>
+                  <span className="text-sm">{item.icon}</span>
+                  <span className="text-[10px] font-bold font-mono tracking-tight uppercase">{item.label}</span>
                 </button>
               ))}
             </nav>
           </div>
         ))}
 
-        <div className="px-4 mt-4">
+        <div className="px-3 mt-2">
           <button 
             onClick={onAiToggle}
-            className="w-full flex items-center gap-3 px-4 py-4 bg-primary/10 border border-primary/30 text-primary hover:bg-primary hover:text-black transition-all rounded-lg font-bold text-xs font-mono group"
+            className="w-full flex items-center gap-2 px-3 py-3 bg-primary/10 border border-primary/30 text-primary hover:bg-primary hover:text-black transition-all rounded-lg font-bold text-[10px] font-mono"
           >
             <span className="animate-pulse">✨</span> 
-            <span>GRAIN AI ASSIST</span>
+            <span>AI ASSIST</span>
           </button>
         </div>
       </div>
 
-      <div className="p-4 border-t border-border space-y-2">
+      <div className="p-3 border-t border-border space-y-1">
         <button 
           onClick={() => onViewChange('profile')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
-            currentView === 'profile' ? 'text-primary bg-primary/5' : 'text-textMuted hover:text-white hover:bg-surface'
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
+            currentView === 'profile' ? 'text-primary bg-primary/5' : 'text-text-muted hover:text-white hover:bg-surface'
           }`}
         >
           <span>👤</span> PROFILE
         </button>
         <button 
           onClick={() => onViewChange('settings')}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
-            currentView === 'settings' ? 'text-primary bg-primary/5' : 'text-textMuted hover:text-white hover:bg-surface'
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all text-[10px] font-bold font-mono uppercase ${
+            currentView === 'settings' ? 'text-primary bg-primary/5' : 'text-text-muted hover:text-white hover:bg-surface'
           }`}
         >
           <span>⚙️</span> SETTINGS

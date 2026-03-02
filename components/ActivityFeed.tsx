@@ -20,7 +20,7 @@ const ActivityFeed: React.FC = () => {
         details: `$${(Math.random() * 1000 + 200).toFixed(2)}/MT`
       };
 
-      setActivities(prev => [newActivity, ...prev].slice(0, 8));
+      setActivities(prev => [newActivity, ...prev].slice(0, 6));
     }, 12000);
     return () => clearInterval(interval);
   }, []);
@@ -35,46 +35,33 @@ const ActivityFeed: React.FC = () => {
   };
 
   return (
-    <section className="py-8 md:py-16 px-4 max-w-[1400px] mx-auto">
-      <div className="flex justify-between items-center mb-6 md:mb-8">
-        <div className="flex items-center gap-3 md:gap-4 flex-1">
-          <h2 className="text-lg md:text-2xl font-bold whitespace-nowrap uppercase tracking-tighter">Market Log</h2>
-          <div className="h-px bg-border flex-1 border-dashed border-t"></div>
-        </div>
-        <div className="flex items-center gap-2 ml-4">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
-          <span className="text-primary text-[9px] md:text-[11px] font-bold whitespace-nowrap uppercase tracking-widest">Live Uplink</span>
+    <section className="py-6 md:py-12 px-4 max-w-[1400px] mx-auto">
+      <div className="flex items-center gap-3 mb-4 md:mb-6">
+        <h2 className="text-base md:text-xl font-black whitespace-nowrap uppercase tracking-tighter">Market Log</h2>
+        <div className="h-px bg-border flex-1" />
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+          <span className="text-primary text-[8px] md:text-[10px] font-bold whitespace-nowrap uppercase tracking-widest">Live</span>
         </div>
       </div>
 
       <div className="bg-surface border border-border rounded-xl overflow-hidden divide-y divide-border">
         {activities.map((act) => (
-          <div key={act.id} className="p-3 md:p-4 hover:bg-surfaceHover transition-colors animate-in fade-in slide-in-from-top-2 duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4">
-              <div className="flex items-start gap-3">
-                <span className="text-base leading-none pt-0.5">{getIcon(act.type)}</span>
-                <div>
-                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-textMuted text-[9px] font-mono whitespace-nowrap uppercase">{act.timestamp}</span>
-                    <span className="sm:hidden text-textMuted text-[9px] font-mono">• {act.details}</span>
-                  </div>
-                  <p className="text-white text-[11px] md:text-sm font-semibold tracking-wide font-mono uppercase leading-tight">
-                    {act.message}
-                  </p>
+          <div key={act.id} className="p-3 md:p-4 hover:bg-surface-hover transition-colors">
+            <div className="flex items-start gap-2 md:gap-3">
+              <span className="text-sm leading-none pt-0.5">{getIcon(act.type)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-text-muted text-[8px] font-mono uppercase">{act.timestamp}</span>
+                  <span className="text-text-muted text-[8px] font-mono">{act.details}</span>
                 </div>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 font-mono">
-                <span className="text-textMuted text-[12px] whitespace-nowrap">{act.details}</span>
+                <p className="text-white text-[10px] md:text-xs font-semibold font-mono uppercase leading-tight truncate">
+                  {act.message}
+                </p>
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="mt-6 md:mt-8 text-center">
-        <button className="text-textMuted hover:text-primary text-[10px] md:text-xs uppercase tracking-[0.3em] font-bold font-mono transition-colors">
-          View Protocol Log →
-        </button>
       </div>
     </section>
   );

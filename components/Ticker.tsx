@@ -8,19 +8,20 @@ interface TickerProps {
 
 const Ticker: React.FC<TickerProps> = ({ cartCount = 0 }) => {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-[50px] md:h-[60px] bg-background border-b border-border flex items-center overflow-hidden px-2 md:px-4">
-      <div className="flex items-center space-x-1.5 mr-4 md:mr-8 flex-shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-        <span className="text-[9px] md:text-xs font-bold text-primary tracking-widest uppercase hidden sm:inline">UPLINK: STABLE</span>
-        <span className="text-[9px] font-bold text-primary tracking-widest uppercase sm:hidden">STABLE</span>
+    <div className="fixed top-0 left-0 right-0 z-50 h-12 md:h-14 bg-background border-b border-border flex items-center overflow-hidden">
+      {/* Logo / Status */}
+      <div className="flex items-center gap-1.5 px-3 md:px-4 flex-shrink-0 border-r border-border h-full">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="text-[9px] md:text-[10px] font-black text-primary tracking-widest uppercase font-mono">GX</span>
       </div>
       
-      <div className="flex-1 overflow-hidden relative">
-        <div className="flex whitespace-nowrap ticker-animation hover:pause">
+      {/* Ticker Tape */}
+      <div className="flex-1 overflow-hidden relative min-w-0">
+        <div className="flex whitespace-nowrap ticker-animation">
           {[...COMMODITIES, ...COMMODITIES].map((c, i) => (
-            <div key={i} className="inline-flex items-center mx-3 md:mx-6 text-[11px] md:text-[13px] font-semibold font-mono">
-              <span className="text-textMuted mr-1.5">[{c.ticker}]</span>
-              <span className="text-textPrimary mr-1.5">{c.price.toLocaleString()}</span>
+            <div key={i} className="inline-flex items-center mx-2 md:mx-4 text-[10px] md:text-[12px] font-semibold font-mono">
+              <span className="text-text-muted mr-1">{c.ticker}</span>
+              <span className="text-text-primary mr-1">{c.price.toLocaleString()}</span>
               <span className={c.change >= 0 ? 'text-primary' : 'text-danger'}>
                 {c.change >= 0 ? '▲' : '▼'}{Math.abs(c.change)}%
               </span>
@@ -29,17 +30,12 @@ const Ticker: React.FC<TickerProps> = ({ cartCount = 0 }) => {
         </div>
       </div>
 
-      <div className="flex items-center ml-2 md:ml-8 flex-shrink-0 gap-3 md:gap-6">
-        <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/30 px-2 md:px-3 py-1 rounded-md">
-          <span className="text-primary text-[9px] md:text-[11px] font-bold tracking-tighter uppercase hidden xs:inline">Buffer</span>
-          <span className="text-primary font-mono font-bold text-xs md:text-sm">[{cartCount.toString().padStart(2, '0')}]</span>
+      {/* Right: Cart + Avatar */}
+      <div className="flex items-center flex-shrink-0 gap-2 px-2 md:px-4 border-l border-border h-full">
+        <div className="flex items-center gap-1 bg-primary/10 border border-primary/30 px-2 py-1 rounded">
+          <span className="text-primary font-mono font-bold text-[10px]">[{cartCount.toString().padStart(2, '0')}]</span>
         </div>
-
-        <div className="text-right hidden lg:block">
-          <p className="text-[11px] font-bold text-textPrimary uppercase">GBIT_SYS</p>
-          <p className="text-[10px] text-textMuted font-mono">9823-TX</p>
-        </div>
-        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-surface border border-border flex items-center justify-center hover:border-primary cursor-pointer transition-colors overflow-hidden flex-shrink-0">
+        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-surface border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
           <img src="https://picsum.photos/40/40" alt="Avatar" className="w-full h-full object-cover" />
         </div>
       </div>
