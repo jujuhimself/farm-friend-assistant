@@ -218,7 +218,7 @@ const CommodityDetails: React.FC<CommodityDetailsProps> = ({ item, onBack, onBuy
               {activeTab === 'regions' && product.growingRegions && (
                 <div className="space-y-6">
                   <div className="bg-surface border border-border p-4 rounded-xl">
-                    <div className="h-[200px] md:h-[250px] w-full">
+                    <div className="h-[200px] md:h-[250px] w-full" style={{ minWidth: 0, minHeight: 200 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={product.growingRegions}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
@@ -288,7 +288,7 @@ const CommodityDetails: React.FC<CommodityDetailsProps> = ({ item, onBack, onBuy
               {activeTab === 'history' && product.priceHistory && (
                 <div className="space-y-4">
                   <div className="bg-surface border border-border p-4 md:p-6 rounded-xl">
-                    <div className="h-[220px] md:h-[280px] w-full">
+                    <div className="h-[220px] md:h-[280px] w-full" style={{ minWidth: 0, minHeight: 220 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={product.priceHistory}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />

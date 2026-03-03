@@ -44,9 +44,11 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
     return () => clearInterval(timer);
   }, []);
 
+  const slide = SLIDES[currentSlide];
+
   return (
-    <section className="relative h-[55vh] md:h-[75vh] w-full overflow-hidden flex items-end">
-      {/* Background */}
+    <section className="relative w-full overflow-hidden">
+      {/* Background Image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
@@ -56,18 +58,20 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
           transition={{ duration: 1.2 }}
           className="absolute inset-0"
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20 z-10" />
           <img 
-            src={SLIDES[currentSlide].image} 
-            alt={SLIDES[currentSlide].crop}
+            src={slide.image} 
+            alt={slide.crop}
             className="w-full h-full object-cover"
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* Content */}
-      <div className="relative z-20 px-4 md:px-8 lg:px-16 pb-8 md:pb-12 max-w-[1400px] mx-auto w-full">
-        <div className="max-w-[600px]">
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
+
+      {/* Content - positioned relative to flow naturally */}
+      <div className="relative z-20 px-4 md:px-8 pt-[30vh] md:pt-[35vh] pb-10 md:pb-14">
+        <div className="max-w-[500px]">
           <motion.div
             key={`tag-${currentSlide}`}
             initial={{ opacity: 0, x: -10 }}
@@ -76,7 +80,7 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             <span className="text-primary text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
-              {SLIDES[currentSlide].tag}
+              {slide.tag}
             </span>
           </motion.div>
 
@@ -85,9 +89,9 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-2xl md:text-4xl lg:text-6xl font-black mb-3 md:mb-5 tracking-tighter uppercase leading-[0.9]"
+            className="text-xl md:text-2xl lg:text-4xl font-black mb-4 tracking-tighter uppercase leading-tight"
           >
-            {SLIDES[currentSlide].crop}
+            {slide.crop}
           </motion.h1>
 
           <motion.div
@@ -95,28 +99,28 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex gap-6 mb-5 md:mb-8"
+            className="flex gap-6 mb-5"
           >
             <div>
               <p className="text-text-muted text-[8px] md:text-[9px] uppercase font-bold tracking-widest mb-0.5">Region</p>
-              <p className="text-xs md:text-sm font-bold">{SLIDES[currentSlide].region}</p>
+              <p className="text-xs md:text-sm font-bold">{slide.region}</p>
             </div>
             <div>
               <p className="text-text-muted text-[8px] md:text-[9px] uppercase font-bold tracking-widest mb-0.5">Price</p>
-              <p className="text-primary text-xs md:text-sm font-bold">{SLIDES[currentSlide].price}</p>
+              <p className="text-primary text-xs md:text-sm font-bold">{slide.price}</p>
             </div>
           </motion.div>
 
           <div className="flex gap-2 md:gap-3">
             <button 
               onClick={onBuyClick}
-              className="px-5 md:px-8 py-2.5 md:py-3 bg-primary text-background font-bold rounded-lg hover:bg-primary-hover transition-all text-[10px] md:text-xs tracking-wider uppercase"
+              className="px-5 md:px-8 py-2.5 md:py-3 bg-primary text-background font-bold rounded-lg hover:bg-primaryHover transition-all text-[10px] md:text-xs tracking-wider uppercase"
             >
               Browse Market
             </button>
             <button 
               onClick={onRfqClick}
-              className="px-5 md:px-8 py-2.5 md:py-3 border border-border text-text-primary font-bold rounded-lg hover:bg-surface transition-all text-[10px] md:text-xs tracking-wider uppercase backdrop-blur-md"
+              className="px-5 md:px-8 py-2.5 md:py-3 border border-border text-textPrimary font-bold rounded-lg hover:bg-surface transition-all text-[10px] md:text-xs tracking-wider uppercase backdrop-blur-md"
             >
               Get Quote
             </button>
@@ -130,7 +134,7 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
           <button
             key={i}
             onClick={() => setCurrentSlide(i)}
-            className={`h-1 rounded-full transition-all ${currentSlide === i ? 'w-6 bg-primary' : 'w-2 bg-text-muted/40'}`}
+            className={`h-1 rounded-full transition-all ${currentSlide === i ? 'w-6 bg-primary' : 'w-2 bg-textMuted/40'}`}
           />
         ))}
       </div>

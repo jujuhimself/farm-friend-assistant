@@ -171,7 +171,7 @@ function App() {
       <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
       <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
 
-      <main className={`lg:ml-[200px] xl:ml-[220px] pt-12 md:pt-14 pb-20 lg:pb-0 relative`}>
+      <main className="pt-12 md:pt-14 pb-20 lg:pb-0 relative" style={{ marginLeft: 'var(--sidebar-width, 0px)' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView + userRole}

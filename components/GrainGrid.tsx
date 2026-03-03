@@ -49,7 +49,7 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
     <motion.div 
       whileHover={{ y: -3 }}
       onClick={handleClick}
-      className="bg-surface border border-border rounded-xl p-4 md:p-5 hover:border-primary/50 transition-all group cursor-pointer flex flex-col justify-between relative overflow-hidden min-w-[200px] w-[200px] md:w-full md:min-w-0 h-[200px] md:h-[240px] flex-shrink-0"
+      className="bg-surface border border-border rounded-xl p-4 md:p-5 hover:border-primary/50 transition-all group cursor-pointer flex flex-col justify-between relative overflow-hidden w-[180px] md:w-auto h-[200px] md:h-[240px] shrink-0 md:shrink"
     >
       <div className="absolute top-0 right-0 p-3 opacity-[0.04] text-3xl md:text-4xl font-black select-none pointer-events-none">
         {commodity.ticker}
@@ -71,7 +71,7 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
         <p className="text-[8px] md:text-[9px] text-text-muted font-bold uppercase tracking-widest">Index</p>
       </div>
       
-      <div className="h-10 md:h-14 w-full my-2">
+      <div className="h-10 md:h-14 w-full my-2" style={{ minWidth: 0, minHeight: 40 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={commodity.history}>
             <Line 
@@ -117,12 +117,19 @@ const GrainGrid: React.FC<GrainGridProps> = ({ onViewDetails }) => {
         <div className="h-px bg-border flex-1" />
       </div>
 
-      {/* Mobile: Horizontal scroll / Desktop: Grid */}
-      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 overflow-x-auto pb-3 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
+      {/* Mobile: horizontal scroll */}
+      <div className="md:hidden flex gap-3 overflow-x-auto pb-3 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
         {COMMODITIES.map((c) => (
           <div key={c.ticker} className="snap-start">
             <CommodityCard commodity={c} onDetails={onViewDetails} />
           </div>
+        ))}
+      </div>
+
+      {/* Desktop: grid */}
+      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {COMMODITIES.map((c) => (
+          <CommodityCard key={c.ticker} commodity={c} onDetails={onViewDetails} />
         ))}
       </div>
     </section>
