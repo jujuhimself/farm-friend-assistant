@@ -189,7 +189,7 @@ const MarketIntelligence: React.FC = () => {
                   {/* Chart */}
                   <div className="bg-surface border border-border p-4 md:p-6 rounded-xl">
                     <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted mb-4">12-Month Performance</h4>
-                    <div className="h-[200px] md:h-[260px] w-full">
+                    <div className="h-[200px] md:h-[260px] w-full" style={{ minWidth: 0, minHeight: 200 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={mockChartData}>
                           <defs>
