@@ -47,7 +47,7 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
   const slide = SLIDES[currentSlide];
 
   return (
-    <section className="relative w-full overflow-hidden">
+    <section className="relative w-full overflow-hidden" style={{ minHeight: '55vh' }}>
       {/* Background Image */}
       <AnimatePresence mode="wait">
         <motion.div

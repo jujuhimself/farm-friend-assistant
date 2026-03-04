@@ -71,7 +71,7 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
         <p className="text-[8px] md:text-[9px] text-text-muted font-bold uppercase tracking-widest">Index</p>
       </div>
       
-      <div className="h-10 md:h-14 w-full my-2" style={{ minWidth: 0, minHeight: 40 }}>
+      <div className="my-2" style={{ width: '100%', height: 56, minWidth: 0, minHeight: 40 }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={commodity.history}>
             <Line 
