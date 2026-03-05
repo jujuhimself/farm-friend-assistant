@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRFQs } from '../hooks/useRFQs';
+import PageShell from '../components/PageShell';
 
 interface MatchedSupplier {
   name: string;
@@ -15,12 +16,7 @@ interface MatchedSupplier {
 const RFQManager: React.FC = () => {
   const { rfqs, submitting, submitRFQ } = useRFQs();
   const [formData, setFormData] = useState({
-    crop: 'MAIZE',
-    volume: '',
-    incoterm: 'FOB',
-    destination: '',
-    timeline: '30 DAYS',
-    instructions: ''
+    crop: 'MAIZE', volume: '', incoterm: 'FOB', destination: '', timeline: '30 DAYS', instructions: ''
   });
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'auth_error'>('idle');
   const [aiPrompt, setAiPrompt] = useState('');
@@ -35,335 +31,196 @@ const RFQManager: React.FC = () => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Generate a structured JSON object for an agricultural RFQ based on this request: "${aiPrompt}". 
-        Return only valid JSON with these keys: crop (uppercase name), volume (number string), incoterm (EXW, FOB, or CIF), destination, timeline, and instructions (technical specs).`,
+        contents: `Generate a structured JSON object for an agricultural RFQ based on this request: "${aiPrompt}". Return only valid JSON with these keys: crop (uppercase name), volume (number string), incoterm (EXW, FOB, or CIF), destination, timeline, and instructions (technical specs).`,
         config: { responseMimeType: "application/json" }
       });
-
       const data = JSON.parse(response.text || '{}');
-      setFormData({
-        crop: data.crop || 'MAIZE',
-        volume: data.volume || '',
-        incoterm: data.incoterm || 'FOB',
-        destination: data.destination || '',
-        timeline: data.timeline || '30 DAYS',
-        instructions: data.instructions || ''
-      });
+      setFormData({ crop: data.crop || 'MAIZE', volume: data.volume || '', incoterm: data.incoterm || 'FOB', destination: data.destination || '', timeline: data.timeline || '30 DAYS', instructions: data.instructions || '' });
       setAiPrompt('');
-    } catch (e) {
-      console.error("AI GENERATION FAILED", e);
-    } finally {
-      setIsGenerating(false);
-    }
+    } catch (e) { console.error("AI GENERATION FAILED", e); }
+    finally { setIsGenerating(false); }
   };
 
   const handleRunMatching = async () => {
-    if (!formData.volume || !formData.destination) {
-      alert("PLEASE COMPLETE RFQ SPECIFICATIONS BEFORE RUNNING MATCH ENGINE.");
-      return;
-    }
-
+    if (!formData.volume || !formData.destination) { alert("Complete specs before matching."); return; }
     setIsMatching(true);
     setMatchedSuppliers([]);
-
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Act as the Grain X Sourcing Engine. Match this RFQ to the top 5 Tanzanian suppliers.
-        
-        RFQ DATA:
-        Crop: ${formData.crop}
-        Volume: ${formData.volume} MT
-        Destination: ${formData.destination}
-        Terms: ${formData.incoterm}
-        Specs: ${formData.instructions}
-
-        SUPPLIER DATABASE MOCK:
-        - Mazaohub (Mbeya): High Maize/Soy volume, 98% reliability.
-        - Kilimanjaro Agro (Arusha): Premium Coffee/Cashews, 95% reliability.
-        - Southern Collective (Lindi/Mtwara): Cashew/Sesame specialists.
-        - Kilombero Agro (Morogoro): High Rice capacity.
-        - Mbeya Traders Co: General grains, competitive pricing.
-        - Coastal Exports: Port-proximate warehouse, high efficiency.
-
-        Return a JSON array of 5 objects with these keys:
-        - name: Supplier Name
-        - confidence: Number (0-100)
-        - reason: Technical reason for match (max 15 words, ALL CAPS)
-        - location: Region in Tanzania
-        - reliability: String (e.g. "98% OTD")
-        
-        Sort by confidence descending.`,
-        config: { 
+        contents: `Act as Grain X Sourcing Engine. Match this RFQ to top 5 Tanzanian suppliers. Crop: ${formData.crop}, Volume: ${formData.volume} MT, Dest: ${formData.destination}, Terms: ${formData.incoterm}, Specs: ${formData.instructions}. Return JSON array with: name, confidence (0-100), reason (15 words max, ALL CAPS), location, reliability. Sort by confidence desc.`,
+        config: {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
               properties: {
-                name: { type: Type.STRING },
-                confidence: { type: Type.NUMBER },
-                reason: { type: Type.STRING },
-                location: { type: Type.STRING },
-                reliability: { type: Type.STRING }
+                name: { type: Type.STRING }, confidence: { type: Type.NUMBER },
+                reason: { type: Type.STRING }, location: { type: Type.STRING }, reliability: { type: Type.STRING }
               },
               required: ["name", "confidence", "reason", "location", "reliability"]
             }
           }
         }
       });
-
-      const results = JSON.parse(response.text || '[]');
-      setMatchedSuppliers(results);
-    } catch (e) {
-      console.error("MATCHING ENGINE FAILURE", e);
-    } finally {
-      setIsMatching(false);
-    }
+      setMatchedSuppliers(JSON.parse(response.text || '[]'));
+    } catch (e) { console.error("MATCHING FAILED", e); }
+    finally { setIsMatching(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus('idle');
     try {
-      await submitRFQ({
-        crop: formData.crop,
-        volume: formData.volume,
-        incoterm: formData.incoterm,
-        destination: formData.destination,
-        timeline: formData.timeline,
-        instructions: formData.instructions,
-      });
+      await submitRFQ({ crop: formData.crop, volume: formData.volume, incoterm: formData.incoterm, destination: formData.destination, timeline: formData.timeline, instructions: formData.instructions });
       setSubmitStatus('success');
       setFormData({ crop: 'MAIZE', volume: '', incoterm: 'FOB', destination: '', timeline: '30 DAYS', instructions: '' });
       setTimeout(() => setSubmitStatus('idle'), 4000);
     } catch (err: any) {
-      if (err.message === 'NOT_AUTHENTICATED') {
-        setSubmitStatus('auth_error');
-      } else {
-        setSubmitStatus('auth_error');
-      }
+      setSubmitStatus('auth_error');
     }
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      <div className="mb-12 border-l-4 border-primary pl-6">
-        <h1 className="text-2xl md:text-4xl font-black mb-2 tracking-tighter uppercase">Initiate RFQ Protocol</h1>
-        <p className="text-textMuted font-mono text-[10px] md:text-xs uppercase tracking-widest">SECURE SOURCE BIDDING // AI_MATCHING_ENGINE</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
-        <div className="lg:col-span-2 space-y-8">
-          {/* AI Assist Input */}
-          <div className="bg-primary/5 border border-primary/20 p-6 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-               <span className="text-5xl">✨</span>
-            </div>
-            <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4">AI RFQ Sourcing Assistant</h3>
-            <div className="flex flex-col md:flex-row gap-4">
-              <input 
-                type="text" 
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="E.G. 'I NEED 200 MT YELLOW MAIZE TO ROTTERDAM BY MARCH WITH SGS CERT'..."
-                className="flex-1 bg-background border border-primary/30 rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none text-white uppercase"
+    <PageShell title="Initiate RFQ Protocol" subtitle="SECURE SOURCE BIDDING // AI_MATCHING_ENGINE">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
+          {/* AI Assist */}
+          <div className="bg-primary/5 border border-primary/20 p-4 md:p-5 rounded-xl relative overflow-hidden">
+            <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-3">AI Sourcing Assistant</h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="E.G. '200 MT YELLOW MAIZE TO ROTTERDAM BY MARCH'..."
+                className="flex-1 bg-background border border-primary/30 rounded-lg px-3 py-2.5 text-[10px] font-mono focus:border-primary outline-none text-white uppercase"
               />
-              <button 
-                onClick={handleAiGenerate}
-                disabled={isGenerating}
-                className="bg-primary text-black font-black px-6 py-3 rounded-xl text-[10px] uppercase tracking-widest hover:bg-primaryHover transition-all disabled:opacity-50"
-              >
-                {isGenerating ? 'PARSING...' : 'GENERATE_DRAFT'}
+              <button onClick={handleAiGenerate} disabled={isGenerating} className="bg-primary text-background font-black px-5 py-2.5 rounded-lg text-[9px] uppercase tracking-widest hover:bg-primary-hover transition-all disabled:opacity-50 flex-shrink-0">
+                {isGenerating ? 'PARSING...' : 'GENERATE'}
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-surface border border-border p-6 md:p-8 rounded-2xl space-y-8 shadow-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Target Commodity</label>
-                <select 
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none appearance-none uppercase text-white"
-                  value={formData.crop}
-                  onChange={(e) => setFormData({...formData, crop: e.target.value})}
-                >
-                  <option>MAIZE</option>
-                  <option>RICE</option>
-                  <option>SOYBEANS</option>
-                  <option>SESAME</option>
-                  <option>CASHEWS</option>
-                  <option>COFFEE</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Volume (Metric Tons)</label>
-                <input 
-                  type="number" 
-                  placeholder="E.G. 500"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none text-white"
-                  value={formData.volume}
-                  onChange={(e) => setFormData({...formData, volume: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Trade Terms (Incoterm)</label>
-                <select 
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none appearance-none uppercase text-white"
-                  value={formData.incoterm}
-                  onChange={(e) => setFormData({...formData, incoterm: e.target.value})}
-                >
-                  <option>EXW (EX WORKS)</option>
-                  <option>FOB (FREE ON BOARD)</option>
-                  <option>CIF (COST, INS., FREIGHT)</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Discharge Port / Destination</label>
-                <input 
-                  type="text" 
-                  placeholder="E.G. ROTTERDAM, NL"
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none text-white uppercase"
-                  value={formData.destination}
-                  onChange={(e) => setFormData({...formData, destination: e.target.value})}
-                />
-              </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="bg-surface border border-border p-4 md:p-6 rounded-xl space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: 'Commodity', type: 'select', key: 'crop', options: ['MAIZE', 'RICE', 'SOYBEANS', 'SESAME', 'CASHEWS', 'COFFEE'] },
+                { label: 'Volume (MT)', type: 'number', key: 'volume', placeholder: '500' },
+                { label: 'Incoterm', type: 'select', key: 'incoterm', options: ['EXW', 'FOB', 'CIF'] },
+                { label: 'Destination', type: 'text', key: 'destination', placeholder: 'ROTTERDAM, NL' },
+              ].map(field => (
+                <div key={field.key} className="space-y-1.5">
+                  <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest">{field.label}</label>
+                  {field.type === 'select' ? (
+                    <select
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-xs font-mono focus:border-primary outline-none appearance-none uppercase text-white"
+                      value={(formData as any)[field.key]}
+                      onChange={(e) => setFormData({...formData, [field.key]: e.target.value})}
+                    >
+                      {field.options?.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type} placeholder={field.placeholder}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-xs font-mono focus:border-primary outline-none text-white uppercase"
+                      value={(formData as any)[field.key]}
+                      onChange={(e) => setFormData({...formData, [field.key]: e.target.value})}
+                    />
+                  )}
+                </div>
+              ))}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-textMuted uppercase tracking-widest">Technical Specs / Special Instructions</label>
-              <textarea 
-                rows={4}
-                placeholder="SPECIFY MOISTURE, PURITY, AFLATOXIN LIMITS, CERTIFICATIONS..."
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-xs font-mono focus:border-primary outline-none resize-none text-white uppercase leading-relaxed"
-                value={formData.instructions}
-                onChange={(e) => setFormData({...formData, instructions: e.target.value})}
-              ></textarea>
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold text-text-muted uppercase tracking-widest">Technical Specs</label>
+              <textarea
+                rows={3} placeholder="MOISTURE, PURITY, AFLATOXIN LIMITS, CERTS..."
+                className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-xs font-mono focus:border-primary outline-none resize-none text-white uppercase leading-relaxed"
+                value={formData.instructions} onChange={(e) => setFormData({...formData, instructions: e.target.value})}
+              />
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-              <button 
-                type="submit"
-                disabled={submitting}
-                className="w-full sm:flex-1 py-4 bg-primary text-black font-black uppercase text-[10px] md:text-xs rounded-xl hover:bg-primaryHover transition-all shadow-xl shadow-primary/10 tracking-widest disabled:opacity-50"
-              >
-                {submitting ? 'TRANSMITTING...' : 'EXECUTE RFQ BROADCAST →'}
+            <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-2">
+              <button type="submit" disabled={submitting} className="flex-1 py-3 bg-primary text-background font-black uppercase text-[10px] rounded-lg hover:bg-primary-hover transition-all tracking-widest disabled:opacity-50">
+                {submitting ? 'TRANSMITTING...' : 'EXECUTE RFQ →'}
               </button>
-              {submitStatus === 'success' && (
-                <div className="w-full text-center py-3 bg-primary/10 border border-primary/30 rounded-xl text-[10px] font-black text-primary uppercase tracking-widest animate-in slide-in-from-top-2">
-                  ✓ RFQ BROADCAST — SUPPLIERS NOTIFIED VIA SECURE UPLINK
-                </div>
-              )}
-              {submitStatus === 'auth_error' && (
-                <div className="w-full text-center py-3 bg-danger/10 border border-danger/30 rounded-xl text-[10px] font-black text-danger uppercase tracking-widest">
-                  AUTH REQUIRED — LOG IN TO SUBMIT RFQ
-                </div>
-              )}
-              <button 
-                type="button"
-                className="w-full sm:w-auto px-10 py-4 border border-border text-textSecondary font-bold uppercase text-[10px] md:text-xs rounded-xl hover:bg-white/5 transition-all tracking-widest"
-              >
-                SAVE_DRAFT
-              </button>
+              <button type="button" className="py-3 px-6 border border-border text-text-secondary font-bold uppercase text-[10px] rounded-lg hover:bg-white/5 transition-all tracking-widest">SAVE DRAFT</button>
             </div>
+            {submitStatus === 'success' && (
+              <div className="text-center py-2.5 bg-primary/10 border border-primary/30 rounded-lg text-[9px] font-black text-primary uppercase tracking-widest">✓ RFQ BROADCAST — SUPPLIERS NOTIFIED</div>
+            )}
+            {submitStatus === 'auth_error' && (
+              <div className="text-center py-2.5 bg-danger/10 border border-danger/30 rounded-lg text-[9px] font-black text-danger uppercase tracking-widest">AUTH REQUIRED — LOG IN TO SUBMIT</div>
+            )}
           </form>
         </div>
 
-        <div className="space-y-8">
-          {/* AI Matching Protocol Section */}
-          <div className="bg-primary/5 border border-primary/30 p-8 rounded-2xl relative overflow-hidden">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm md:text-lg font-black text-white uppercase tracking-tight">AI Matching Protocol</h3>
-              <button 
-                onClick={handleRunMatching}
-                disabled={isMatching}
-                className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded border transition-all ${
-                  isMatching ? 'border-primary bg-primary/20 text-primary' : 'border-primary/50 text-primary hover:bg-primary hover:text-black'
-                }`}
-              >
-                {isMatching ? 'SYNCING...' : 'RUN_MATCH_ENGINE'}
+        {/* Right Column */}
+        <div className="space-y-4">
+          {/* Matching */}
+          <div className="bg-primary/5 border border-primary/30 p-4 md:p-5 rounded-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xs font-black text-white uppercase tracking-tight">AI Match</h3>
+              <button onClick={handleRunMatching} disabled={isMatching} className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded border transition-all ${isMatching ? 'border-primary bg-primary/20 text-primary' : 'border-primary/50 text-primary hover:bg-primary hover:text-background'}`}>
+                {isMatching ? 'SYNCING...' : 'RUN MATCH'}
               </button>
             </div>
-            
-            <p className="text-[10px] text-textSecondary leading-relaxed mb-8 font-mono uppercase tracking-widest">
-              UPLINK ANALYZING VERIFIED INVENTORY, OTD SCORES, PROXIMITY, AND QUALITY PASS PROBABILITY.
-            </p>
+            <p className="text-[9px] text-text-secondary leading-relaxed mb-4 font-mono uppercase tracking-widest">Analyzing verified inventory, OTD scores & proximity.</p>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <AnimatePresence mode="popLayout">
                 {isMatching ? (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="py-12 flex flex-col items-center justify-center gap-4"
-                  >
-                    <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-[9px] font-black text-primary uppercase animate-pulse">Scanning_Global_Nodes...</span>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-10 flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[8px] font-black text-primary uppercase animate-pulse">Scanning...</span>
                   </motion.div>
                 ) : matchedSuppliers.length > 0 ? (
                   matchedSuppliers.map((sup, i) => (
-                    <motion.div 
-                      key={sup.name}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="p-4 bg-background/50 border border-border rounded-xl group hover:border-primary/50 transition-all"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] font-black text-white uppercase">{sup.name}</span>
-                        <span className="text-[10px] font-black text-primary">{sup.confidence}% MATCH</span>
+                    <motion.div key={sup.name} initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }} className="p-3 bg-background/50 border border-border rounded-lg hover:border-primary/50 transition-all">
+                      <div className="flex justify-between items-start mb-1.5">
+                        <span className="text-[9px] font-black text-white uppercase truncate">{sup.name}</span>
+                        <span className="text-[9px] font-black text-primary flex-shrink-0 ml-2">{sup.confidence}%</span>
                       </div>
-                      <div className="w-full h-1 bg-surface rounded-full overflow-hidden mb-3">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${sup.confidence}%` }}
-                          transition={{ duration: 1, delay: i * 0.1 }}
-                          className="h-full bg-primary"
-                        />
+                      <div className="w-full h-1 bg-surface rounded-full overflow-hidden mb-2">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${sup.confidence}%` }} transition={{ duration: 0.8, delay: i * 0.08 }} className="h-full bg-primary" />
                       </div>
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <p className="text-[8px] text-textMuted uppercase font-black mb-1">{sup.location} // {sup.reliability}</p>
-                          <p className="text-[9px] text-textSecondary font-mono uppercase leading-tight italic">{sup.reason}</p>
-                        </div>
-                        <button className="text-[8px] font-black text-primary uppercase border border-primary/20 px-2 py-1 rounded hover:bg-primary hover:text-black transition-all">VIEW_DNA</button>
-                      </div>
+                      <p className="text-[7px] text-text-muted uppercase font-black mb-0.5">{sup.location} // {sup.reliability}</p>
+                      <p className="text-[8px] text-text-secondary font-mono uppercase leading-tight italic truncate">{sup.reason}</p>
                     </motion.div>
                   ))
                 ) : (
-                  <div className="py-12 text-center opacity-30 border-2 border-dashed border-border rounded-xl">
-                    <p className="text-[9px] font-black uppercase tracking-widest">Awaiting Command...</p>
+                  <div className="py-10 text-center opacity-30 border-2 border-dashed border-border rounded-lg">
+                    <p className="text-[8px] font-black uppercase tracking-widest">Awaiting Command...</p>
                   </div>
                 )}
               </AnimatePresence>
             </div>
           </div>
 
-          <div className="bg-surface border border-border p-6 md:p-8 rounded-2xl">
-            <h3 className="text-[11px] font-black text-white mb-6 uppercase tracking-widest border-b border-border pb-4">Recent Protocol Logs</h3>
-            <div className="space-y-4">
+          {/* Recent RFQs */}
+          <div className="bg-surface border border-border p-4 md:p-5 rounded-xl">
+            <h3 className="text-[10px] font-black text-white mb-4 uppercase tracking-widest border-b border-border pb-3">Recent Logs</h3>
+            <div className="space-y-2">
               {rfqs.length === 0 ? (
-                <div className="py-8 text-center border-2 border-dashed border-border rounded-xl opacity-40">
-                  <p className="text-[9px] font-black uppercase tracking-widest">No RFQ history yet</p>
+                <div className="py-6 text-center border-2 border-dashed border-border rounded-lg opacity-40">
+                  <p className="text-[8px] font-black uppercase tracking-widest">No history</p>
                 </div>
-              ) : rfqs.slice(0, 5).map((rfq) => (
-                <div key={rfq.id} className="flex justify-between items-center p-4 border border-border rounded-xl bg-background hover:border-primary/30 transition-colors cursor-pointer group">
-                  <div>
-                    <p className="text-[10px] font-black text-white uppercase group-hover:text-primary transition-colors">{rfq.crop}</p>
-                    <p className="text-[9px] text-textMuted font-mono uppercase">{rfq.volume} MT • {new Date(rfq.created_at).toLocaleDateString()}</p>
+              ) : rfqs.slice(0, 5).map(rfq => (
+                <div key={rfq.id} className="flex justify-between items-center p-3 border border-border rounded-lg bg-background hover:border-primary/30 transition-colors cursor-pointer">
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-white uppercase truncate">{rfq.crop}</p>
+                    <p className="text-[8px] text-text-muted font-mono uppercase">{rfq.volume} MT • {new Date(rfq.created_at).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-[8px] font-black px-2 py-1 rounded tracking-widest uppercase ${rfq.status === 'OPEN' ? 'bg-warning/10 text-warning animate-pulse' : 'bg-primary/10 text-primary'}`}>
-                    {rfq.status}
-                  </span>
+                  <span className={`text-[7px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase flex-shrink-0 ${rfq.status === 'OPEN' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>{rfq.status}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

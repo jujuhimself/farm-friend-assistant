@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { TRADE_NEWS } from './constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 import Ticker from './components/Ticker';
 import Hero from './components/Hero';
 import GrainGrid from './components/GrainGrid';
@@ -115,7 +116,7 @@ function App() {
             <QuickActions onViewChange={(v) => protectedNavigate(v as ViewType)} />
             <ActivityFeed />
             {/* Latest News Preview */}
-            <section className="py-8 md:py-16 px-4 max-w-[1400px] mx-auto">
+            <section className="py-8 md:py-16 px-3 md:px-6 max-w-[1400px] mx-auto">
               <div className="flex items-center gap-3 mb-6">
                 <h2 className="text-base md:text-xl font-black whitespace-nowrap uppercase tracking-tighter">Latest News</h2>
                 <div className="h-px bg-border flex-1" />
@@ -160,41 +161,47 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background font-mono text-text-primary overflow-x-hidden">
-      <Ticker cartCount={cart.length} />
-      <Sidebar 
-        currentView={currentView} 
-        onViewChange={(v) => protectedNavigate(v as ViewType)} 
-        onAiToggle={() => setIsAiOpen(true)} 
-        userRole={userRole}
-      />
-      <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
-      <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
+    <ErrorBoundary>
+      <div className="min-h-screen min-h-dvh bg-background font-mono text-text-primary overflow-x-hidden">
+        <Ticker cartCount={cart.length} />
+        <Sidebar 
+          currentView={currentView} 
+          onViewChange={(v) => protectedNavigate(v as ViewType)} 
+          onAiToggle={() => setIsAiOpen(true)} 
+          userRole={userRole}
+        />
+        <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
+        <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
 
-      <main className="pt-12 md:pt-14 pb-20 lg:pb-0 relative" style={{ marginLeft: 'var(--sidebar-width, 0px)' }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentView + userRole}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderView()}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        <main
+          className="pt-12 md:pt-14 pb-20 lg:pb-0 relative min-w-0"
+          style={{ marginLeft: 'var(--sidebar-width, 0px)' }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView + userRole}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="min-w-0"
+            >
+              {renderView()}
+            </motion.div>
+          </AnimatePresence>
+        </main>
 
-      {/* AI FAB */}
-      <button 
-        onClick={() => setIsAiOpen(true)}
-        className="fixed bottom-20 lg:bottom-6 right-3 lg:right-6 z-40 w-11 h-11 md:w-12 md:h-12 bg-primary text-background rounded-full shadow-[0_0_20px_rgba(0,255,136,0.3)] flex items-center justify-center text-base transition-transform active:scale-90"
-      >
-        ✨
-      </button>
+        {/* AI FAB - above bottom nav on mobile, bottom-right on desktop */}
+        <button 
+          onClick={() => setIsAiOpen(true)}
+          className="fixed bottom-20 lg:bottom-6 right-3 lg:right-6 z-40 w-11 h-11 md:w-12 md:h-12 bg-primary text-background rounded-full shadow-[0_0_20px_rgba(0,255,136,0.3)] flex items-center justify-center text-base transition-transform active:scale-90"
+        >
+          ✨
+        </button>
 
-      <GrainAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
-    </div>
+        <GrainAI isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
+      </div>
+    </ErrorBoundary>
   );
 }
 
