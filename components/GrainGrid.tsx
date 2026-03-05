@@ -9,7 +9,7 @@ const CommodityCard: React.FC<{ commodity: any, onDetails: (item: any) => void }
     <motion.div 
       whileHover={{ y: -5, scale: 1.02 }}
       onClick={() => onDetails(commodity)}
-      className="bg-surface border border-border rounded-2xl p-6 hover:border-primary/50 transition-all group cursor-pointer h-[240px] md:h-[280px] flex flex-col justify-between relative overflow-hidden shrink-0 w-[280px] md:w-full"
+      className="bg-surface border border-border rounded-2xl p-6 hover:border-primary/50 transition-all group cursor-pointer h-[240px] md:h-[280px] flex flex-col justify-between relative overflow-hidden w-full"
     >
       <div className="absolute top-0 right-0 p-4 opacity-[0.05] text-5xl font-black select-none pointer-events-none">
         {commodity.ticker}
@@ -77,8 +77,8 @@ const GrainGrid: React.FC<GrainGridProps> = ({ onViewDetails }) => {
         <div className="h-px bg-border flex-1 border-dashed border-t"></div>
       </div>
 
-      {/* Mobile Carousel / Desktop Grid Container */}
-      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-x-auto pb-8 md:pb-0 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 scroll-snap-x">
+      {/* Mobile Grid / Desktop Grid Container */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {COMMODITIES.map((c, i) => (
           <CommodityCard key={c.ticker} commodity={c} onDetails={onViewDetails} />
         ))}

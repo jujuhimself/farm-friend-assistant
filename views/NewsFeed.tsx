@@ -22,7 +22,7 @@ const NewsFeed: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <button onClick={onBack} className="text-primary font-mono text-[10px] uppercase tracking-widest mb-4 hover:translate-x-[-4px] transition-transform flex items-center gap-2">
             ← BACK TO TERMINAL
           </button>
-          <h1 className="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">The Wire</h1>
+          <h1 className="text-3xl md:text-7xl font-black tracking-tighter uppercase leading-[0.85]">The Wire</h1>
           <p className="text-textMuted font-mono text-xs uppercase tracking-[0.4em]">Agricultural Field Intelligence & Policy Reports</p>
         </div>
         
@@ -59,7 +59,7 @@ const NewsFeed: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                       <span className="text-[10px] font-black text-primary uppercase tracking-widest">#{article.category}</span>
                       <span className="text-[10px] text-textMuted font-mono uppercase">{article.date}</span>
                     </div>
-                    <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tight mb-6 group-hover:text-primary transition-colors leading-tight">
+                    <h2 className="text-xl md:text-4xl font-black text-white uppercase tracking-tight mb-6 group-hover:text-primary transition-colors leading-tight">
                       {article.title}
                     </h2>
                     <p className="text-sm text-textSecondary uppercase font-mono leading-relaxed mb-8">

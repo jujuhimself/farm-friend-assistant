@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { COMMODITIES, TRADE_NEWS, AI_INSIGHTS, EXPORT_GUIDELINES, SUPPLY_SIGNALS, REGIONS } from '../constants';
@@ -13,7 +13,7 @@ const IntelligenceReportCard: React.FC<{ news: TradeNews, onClick: () => void }>
   <motion.div 
     whileHover={{ y: -5 }}
     onClick={onClick}
-    className="bg-surface border border-border rounded-2xl overflow-hidden cursor-pointer group flex flex-col h-full min-w-[280px]"
+    className="bg-surface border border-border rounded-2xl overflow-hidden cursor-pointer group flex flex-col h-full w-full lg:min-w-[280px]"
   >
     <div className="h-32 overflow-hidden relative">
       <img src={news.image} alt={news.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -34,6 +34,30 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ onViewChange })
   const [selectedRegion, setSelectedRegion] = useState(REGIONS[0]);
   const [forecastDays, setForecastDays] = useState(30);
   const [selectedCountry, setSelectedCountry] = useState(EXPORT_GUIDELINES[0]);
+  const [marketStats, setMarketStats] = useState([
+    { label: 'Global Volatility', value: '4.2%', status: 'STABLE' },
+    { label: 'Supply Momentum', value: 'HIGH', status: '▲ 15%' },
+    { label: 'Risk Rating', value: 'AAA', status: 'VERIFIED' },
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/market/summary');
+        if (response.ok) {
+          const data = await response.json();
+          setMarketStats([
+            { label: 'Global Volatility', value: data.volatility, status: 'STABLE' },
+            { label: 'Supply Momentum', value: data.momentum, status: 'SYNCED' },
+            { label: 'Risk Rating', value: data.risk, status: 'VERIFIED' },
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch market stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const getForecastData = (basePrice: number, days: number, region: string) => {
     const data = [];
@@ -66,11 +90,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ onViewChange })
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full lg:w-auto">
-          {[
-            { label: 'Global Volatility', value: '4.2%', status: 'STABLE' },
-            { label: 'Supply Momentum', value: 'HIGH', status: '▲ 15%' },
-            { label: 'Risk Rating', value: 'AAA', status: 'VERIFIED' },
-          ].map((stat, i) => (
+          {marketStats.map((stat, i) => (
             <div key={i} className="bg-surface border border-border p-6 rounded-2xl min-w-[180px]">
               <p className="text-[9px] font-black text-textMuted uppercase mb-2 tracking-[0.2em]">{stat.label}</p>
               <div className="flex items-end gap-2">
@@ -93,7 +113,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ onViewChange })
             Access All Field Reports →
           </button>
         </div>
-        <div className="flex gap-6 overflow-x-auto pb-6 scrollbar-hide">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:gap-6 lg:overflow-x-auto pb-6 scrollbar-hide gap-4">
           {TRADE_NEWS.map(news => (
             <IntelligenceReportCard key={news.id} news={news} onClick={() => onViewChange?.('news')} />
           ))}
@@ -152,7 +172,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ onViewChange })
             </div>
           </div>
 
-          <div className="h-[450px] w-full mb-10">
+          <div className="h-[300px] md:h-[450px] w-full mb-10">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={forecastData}>
                 <defs>

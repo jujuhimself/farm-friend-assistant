@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onAiToggle
   const groups = userRole === 'admin' ? ADMIN_GROUPS : userRole === 'supplier' ? SUPPLIER_GROUPS : userRole === 'guest' ? GUEST_GROUPS : BUYER_GROUPS;
 
   return (
-    <aside className="fixed top-[60px] left-0 bottom-0 w-[240px] bg-background border-r border-border hidden lg:flex flex-col z-40">
+    <aside className="fixed top-[50px] md:top-[60px] left-0 bottom-0 w-[240px] bg-background border-r border-border hidden lg:flex flex-col z-40">
       <div className="flex-1 overflow-y-auto py-8">
         <div className="px-6 mb-8">
            <div className={`text-[10px] font-black uppercase px-2 py-1 rounded inline-block ${

@@ -40,15 +40,39 @@ Grain X is a high-performance B2B agricultural commodity export platform.
 
 ## 4. Technical Architecture
 
-### Frontend Stack
-- **Framework**: React 19 (ESM via esm.sh).
-- **Motion**: Framer Motion for high-fidelity state transitions.
-- **Charts**: Recharts for terminal-grade financial data visualization.
-- **AI**: Google Gemini 3 Flash/Pro for NLP parsing and image-based document verification (Vision AI).
+### Full-Stack Environment (Unified Terminal)
+The platform operates as a **Full-Stack (Express + Vite)** application, ensuring a seamless bridge between high-performance frontend interactions and secure server-side logic.
 
-### AI Agent: Grain X Agent V4
-- **Role**: A persistent side-panel assistant capable of analyzing sourcing strategies, ranking suppliers, and providing "Technical Briefings" on crop seasonality and trade risks.
+- **Backend (Express)**: 
+  - **Entry Point**: `server.ts`
+  - **Role**: Manages real-time API routes, secure third-party integrations (Stripe, Databases), and serves the React application via Vite middleware.
+  - **CORS Configuration**: Enabled for all origins (`*`) to support **Capacitor** mobile app requests from `capacitor://localhost`.
+- **Frontend (React 19)**:
+  - **Framework**: React 19 (ESM via esm.sh).
+  - **Motion**: Framer Motion for high-fidelity state transitions.
+  - **Charts**: Recharts for terminal-grade financial data visualization.
+  - **AI**: Google Gemini 3 Flash/Pro for NLP parsing and image-based document verification (Vision AI).
 
-## 5. Deployment & Security
+### API Endpoints (Terminal Uplink)
+- `GET /api/health`: System status and node heartbeat.
+- `GET /api/market/summary`: Real-time volatility and supply momentum data.
+
+## 5. Mobile & Deployment Strategy
+
+### Capacitor Integration (Mobile App)
+Grain X is designed to be bundled as a native mobile application using **Capacitor**.
+- **Architecture**: The React frontend is bundled into the mobile binary, while the Express backend is hosted remotely (e.g., Vercel, AWS).
+- **Communication**: The mobile app communicates with the remote Express server via standard REST/WebSocket protocols.
+- **CORS Compliance**: The backend is pre-configured to allow requests from mobile origins.
+
+### UI/UX Optimization
+- **Mobile-First Grids**: Marketplace and Intelligence feeds automatically switch from horizontal scrolls to high-density vertical grids on mobile for better scannability.
+- **Terminal Aesthetic**: 
+  - **Scanlines**: Subtle overlay (`opacity-08`) for a high-tech feel without sacrificing clarity.
+  - **Ticker**: Global market ticker at the top for persistent price awareness.
+  - **Command Palette**: `Ctrl+K` (or `Cmd+K`) access to all system protocols.
+
+### Security & Deployment
 - **Uplink Integrity**: AES-256 encryption simulated for all trade data.
+- **Vercel Ready**: Optimized for deployment on Vercel with automatic Vite detection.
 - **Performance**: Edge-cached assets for low-latency access in low-bandwidth regional trade hubs.

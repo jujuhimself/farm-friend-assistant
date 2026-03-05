@@ -128,7 +128,7 @@ function App() {
       <CommandPalette onViewChange={(v) => protectedNavigate(v as ViewType)} />
       <BottomNav currentView={currentView} onViewChange={(v) => protectedNavigate(v as ViewType)} />
 
-      <main className={`lg:ml-[240px] ${currentView === 'dashboard' ? 'pt-0' : 'pt-[60px]'} relative pb-24 lg:pb-0`}>
+      <main className={`lg:ml-[240px] pt-[50px] md:pt-[60px] relative pb-24 lg:pb-0`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView + userRole}

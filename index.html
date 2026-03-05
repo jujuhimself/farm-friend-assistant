@@ -48,14 +48,15 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #00ff88;
         }
-        body {
+        html, body {
             background-color: #050505;
             color: #ffffff;
             font-family: 'JetBrains Mono', monospace;
             overflow-x: hidden;
+            min-height: 100vh;
         }
         
-        /* Scanline Overlay */
+        /* Scanline Overlay - Subtle */
         body::before {
             content: " ";
             display: block;
@@ -64,22 +65,43 @@
             left: 0;
             bottom: 0;
             right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
             z-index: 1000;
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
-            opacity: 0.15;
+            opacity: 0.08;
         }
 
         @keyframes ticker {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
         .ticker-animation {
-            animation: ticker 40s linear infinite;
+            animation: ticker 30s linear infinite;
+            display: flex;
+            width: fit-content;
         }
         .glow-text {
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        }
+        #root:empty {
+            background-color: #050505;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #root:empty::after {
+            content: "GRAIN_X_TERMINAL_INITIALIZING...";
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff88;
+            font-size: 12px;
+            letter-spacing: 0.5em;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
     </style>
 <script type="importmap">
@@ -94,6 +116,7 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>
