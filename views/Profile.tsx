@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import PageShell from '../components/PageShell';
 
 interface ProfileProps {
   userRole: string;
@@ -22,48 +23,33 @@ const Profile: React.FC<ProfileProps> = ({ userRole, onLogout, profile, onUpdate
 
   const handleSave = async () => {
     setSaving(true);
-    try {
-      await onUpdateProfile(form);
-      setEditing(false);
-    } catch (e) {
-      console.error('Profile update failed:', e);
-    } finally {
-      setSaving(false);
-    }
+    try { await onUpdateProfile(form); setEditing(false); }
+    catch (e) { console.error('Profile update failed:', e); }
+    finally { setSaving(false); }
   };
 
-  const displayName = profile?.company_name || profile?.display_name || profile?.email || 'User';
   const email = profile?.email || '';
 
   return (
-    <div className="p-6 md:p-12 max-w-[1200px] mx-auto animate-in fade-in duration-500 pb-24 lg:pb-12">
-      <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-8 border-b border-border pb-10">
-        <div className="space-y-3">
-          <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none">My Profile</h1>
-          <p className="text-textMuted font-mono text-xs uppercase tracking-widest">
-            Role: {userRole.toUpperCase()} · {profile?.verified ? 'Verified ✓' : 'Unverified'}
-          </p>
-        </div>
-        <div className="flex gap-3">
+    <PageShell
+      title="My Profile"
+      subtitle={`Role: ${userRole.toUpperCase()} · ${profile?.verified ? 'Verified ✓' : 'Unverified'}`}
+      rightContent={
+        <div className="flex gap-2">
           {!editing && (
-            <button onClick={() => setEditing(true)} className="px-6 py-3 bg-surface border border-border text-textSecondary rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all">
-              Edit Profile
-            </button>
+            <button onClick={() => setEditing(true)} className="px-4 py-2 bg-surface border border-border text-text-secondary rounded-lg text-[9px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all">Edit</button>
           )}
-          <button onClick={onLogout} className="px-6 py-3 bg-danger/10 text-danger border border-danger/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-danger hover:text-white transition-all">
-            Sign Out
-          </button>
+          <button onClick={onLogout} className="px-4 py-2 bg-danger/10 text-danger border border-danger/30 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-danger hover:text-white transition-all">Sign Out</button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-8">
-          <div className="bg-surface border border-border p-8 md:p-10 rounded-2xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-primary"></span> Company Information
+      }
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
+        <div className="lg:col-span-8 space-y-4">
+          <div className="bg-surface border border-border p-4 md:p-6 rounded-xl">
+            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Company Info
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { label: 'Company Name', key: 'company_name', value: form.company_name },
                 { label: 'Display Name', key: 'display_name', value: form.display_name },
@@ -72,63 +58,46 @@ const Profile: React.FC<ProfileProps> = ({ userRole, onLogout, profile, onUpdate
                 { label: 'Country', key: 'country', value: form.country },
                 { label: 'Address', key: 'address', value: form.address },
               ].map(field => (
-                <div key={field.key} className="space-y-2">
-                  <p className="text-[10px] text-textMuted font-black uppercase tracking-widest">{field.label}</p>
+                <div key={field.key} className="space-y-1.5">
+                  <p className="text-[9px] text-text-muted font-black uppercase tracking-widest">{field.label}</p>
                   {editing && !field.readOnly ? (
-                    <input
-                      type="text"
-                      value={field.value}
-                      onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
-                      className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-white outline-none focus:border-primary transition-all"
-                    />
+                    <input type="text" value={field.value} onChange={(e) => setForm({ ...form, [field.key]: e.target.value })} className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-primary transition-all" />
                   ) : (
-                    <p className="text-base font-bold text-white">{field.value || '—'}</p>
+                    <p className="text-sm font-bold text-white truncate">{field.value || '—'}</p>
                   )}
                 </div>
               ))}
             </div>
-
             {editing && (
-              <div className="space-y-2 mt-8">
-                <p className="text-[10px] text-textMuted font-black uppercase tracking-widest">Bio</p>
-                <textarea
-                  value={form.bio}
-                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  rows={3}
-                  className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-white outline-none focus:border-primary transition-all resize-none"
-                />
+              <div className="space-y-1.5 mt-4">
+                <p className="text-[9px] text-text-muted font-black uppercase tracking-widest">Bio</p>
+                <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-primary transition-all resize-none" />
               </div>
             )}
-
             {editing && (
-              <div className="mt-8 flex gap-4">
-                <button onClick={handleSave} disabled={saving} className="px-8 py-3 bg-primary text-black font-black uppercase text-[10px] rounded-xl hover:bg-primaryHover transition-all tracking-widest disabled:opacity-50">
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-                <button onClick={() => setEditing(false)} className="px-8 py-3 border border-border text-textMuted font-black uppercase text-[10px] rounded-xl hover:bg-surface transition-all">
-                  Cancel
-                </button>
+              <div className="mt-4 flex gap-3">
+                <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-primary text-background font-black uppercase text-[10px] rounded-lg hover:bg-primary-hover transition-all tracking-widest disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
+                <button onClick={() => setEditing(false)} className="px-6 py-2.5 border border-border text-text-muted font-black uppercase text-[10px] rounded-lg hover:bg-surface transition-all">Cancel</button>
               </div>
             )}
           </div>
 
-          {/* Platform Stats */}
-          <div className="bg-surface border border-border p-8 md:p-10 rounded-2xl">
-            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-8">Account Overview</h3>
-            <div className="flex flex-wrap gap-12">
+          <div className="bg-surface border border-border p-4 md:p-6 rounded-xl">
+            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.15em] mb-5">Account Overview</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
-                <p className="text-[10px] text-textMuted font-black uppercase mb-2">Trust Score</p>
-                <p className="text-3xl font-black text-white tracking-tighter">{profile?.trust_score || 0}<span className="text-primary text-sm ml-1">/100</span></p>
+                <p className="text-[9px] text-text-muted font-black uppercase mb-1">Trust Score</p>
+                <p className="text-2xl font-black text-white tracking-tighter">{profile?.trust_score || 0}<span className="text-primary text-xs ml-0.5">/100</span></p>
               </div>
               <div>
-                <p className="text-[10px] text-textMuted font-black uppercase mb-2">Member Since</p>
-                <p className="text-3xl font-black text-white tracking-tighter">
+                <p className="text-[9px] text-text-muted font-black uppercase mb-1">Since</p>
+                <p className="text-2xl font-black text-white tracking-tighter">
                   {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en', { month: 'short', year: 'numeric' }) : '—'}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-textMuted font-black uppercase mb-2">Verification</p>
-                <p className={`text-3xl font-black tracking-tighter ${profile?.verified ? 'text-primary' : 'text-warning'}`}>
+                <p className="text-[9px] text-text-muted font-black uppercase mb-1">Status</p>
+                <p className={`text-2xl font-black tracking-tighter ${profile?.verified ? 'text-primary' : 'text-warning'}`}>
                   {profile?.verified ? 'Verified' : 'Pending'}
                 </p>
               </div>
@@ -136,26 +105,25 @@ const Profile: React.FC<ProfileProps> = ({ userRole, onLogout, profile, onUpdate
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-primary/5 border border-primary/20 p-8 rounded-2xl">
-            <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-6">Account Status</h3>
-            <div className="space-y-4">
+        <div className="lg:col-span-4">
+          <div className="bg-primary/5 border border-primary/20 p-4 md:p-5 rounded-xl">
+            <h3 className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Account Status</h3>
+            <div className="space-y-3">
               {[
                 { label: 'Role', value: userRole.toUpperCase(), color: 'text-primary' },
                 { label: 'Email Verified', value: profile?.email ? 'Yes' : 'No', color: 'text-primary' },
                 { label: 'Profile Complete', value: profile?.company_name ? 'Yes' : 'No', color: profile?.company_name ? 'text-primary' : 'text-warning' },
               ].map((stat, i) => (
-                <div key={i} className="flex justify-between items-center border-b border-border pb-3 last:border-0">
-                  <span className="text-[10px] font-mono text-textMuted uppercase tracking-widest">{stat.label}</span>
-                  <span className={`text-[10px] font-black uppercase ${stat.color}`}>{stat.value}</span>
+                <div key={i} className="flex justify-between items-center border-b border-border pb-2 last:border-0">
+                  <span className="text-[9px] font-mono text-text-muted uppercase">{stat.label}</span>
+                  <span className={`text-[9px] font-black uppercase ${stat.color}`}>{stat.value}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 
