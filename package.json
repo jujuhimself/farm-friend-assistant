@@ -15,7 +15,7 @@
     "@types/express": "^5.0.6",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "framer-motion": "^11.11.17",
+    "framer-motion": "^12.35.2",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0",
