@@ -33,6 +33,20 @@
             }
         }
     </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.2.3",
+        "react-dom": "https://esm.sh/react-dom@19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@19.2.3/",
+        "react/": "https://esm.sh/react@19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@1.37.0",
+        "framer-motion": "https://esm.sh/framer-motion@11.11.17?external=react",
+        "lucide-react": "https://esm.sh/lucide-react@0.460.0?external=react",
+        "recharts": "https://esm.sh/recharts@3.6.0?external=react"
+      }
+    }
+    </script>
     <style>
         ::-webkit-scrollbar {
             width: 4px;
@@ -54,6 +68,13 @@
             font-family: 'JetBrains Mono', monospace;
             overflow-x: hidden;
             min-height: 100vh;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         /* Scanline Overlay - Subtle */
@@ -90,33 +111,34 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
         }
         #root:empty::after {
             content: "GRAIN_X_TERMINAL_INITIALIZING...";
             font-family: 'JetBrains Mono', monospace;
             color: #00ff88;
-            font-size: 12px;
-            letter-spacing: 0.5em;
+            font-size: 10px;
+            letter-spacing: 0.3em;
             animation: pulse 2s infinite;
+            padding: 20px;
+            text-align: center;
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+
+        /* Mobile Font Scaling Fix */
+        @media (max-width: 640px) {
+            h1 { font-size: 2.5rem !important; line-height: 1.1 !important; }
+            h2 { font-size: 2rem !important; }
+            .glow-text { text-shadow: 0 0 5px rgba(0, 255, 136, 0.4); }
+        }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "framer-motion": "https://esm.sh/framer-motion@12.0.0-alpha.0?external=react"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
     <div id="root"></div>

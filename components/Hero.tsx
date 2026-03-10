@@ -113,7 +113,7 @@ const Hero: React.FC<HeroProps> = ({ onRfqClick, onBuyClick }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-3xl md:text-7xl font-black mb-6 tracking-tighter uppercase leading-[0.9] glow-text"
+            className="text-2xl sm:text-4xl md:text-7xl font-black mb-6 tracking-tighter uppercase leading-[0.9] glow-text"
           >
             {SLIDES[currentSlide].crop}
           </motion.h1>

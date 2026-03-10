@@ -85,16 +85,16 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ onViewChange })
              <div className="w-2 h-2 rounded-full bg-primary animate-ping"></div>
              <span className="text-primary text-xs font-black tracking-[0.4em] uppercase font-mono">Satellite Briefing: LIVE</span>
           </div>
-          <h2 className="text-4xl md:text-7xl font-black tracking-tighter uppercase glow-text leading-[0.85]">Technical Briefing</h2>
+          <h2 className="text-2xl sm:text-4xl md:text-7xl font-black tracking-tighter uppercase glow-text leading-[0.85]">Technical Briefing</h2>
           <p className="text-textMuted font-mono text-xs uppercase tracking-[0.4em]">Integrated Sourcing Synthesis // Node: Dar_Terminal</p>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full lg:w-auto">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full lg:w-auto">
           {marketStats.map((stat, i) => (
-            <div key={i} className="bg-surface border border-border p-6 rounded-2xl min-w-[180px]">
+            <div key={i} className="bg-surface border border-border p-4 md:p-6 rounded-2xl min-w-0 sm:min-w-[180px]">
               <p className="text-[9px] font-black text-textMuted uppercase mb-2 tracking-[0.2em]">{stat.label}</p>
               <div className="flex items-end gap-2">
-                <span className="text-2xl font-black text-white">{stat.value}</span>
+                <span className="text-xl md:text-2xl font-black text-white">{stat.value}</span>
                 <span className="text-[10px] font-bold mb-1 uppercase text-primary">{stat.status}</span>
               </div>
             </div>
